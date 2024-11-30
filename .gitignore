@@ -1,5 +1,6 @@
-.vim
-.idea
+build/
+*.vim
+*.idea
 # Prerequisites
 *.d
 

@@ -1,7 +1,5 @@
 #include "application.h"
 
-#include "physics/constants.h"
-
 void run() {
     setup();
 

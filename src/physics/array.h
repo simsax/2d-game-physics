@@ -30,6 +30,8 @@ typedef struct {
         (xs)->items[(xs)->count++] = (x);                                                   \
     } while (0)                                                                             
 
-#define ARR_NULL { .capacity = 0, .count = 0, .items = NULL }
+#define DA_NULL { .capacity = 0, .count = 0, .items = NULL }
+
+#define DA_FREE(xs) free((xs)->items)
 
 #endif // ARRAY_H

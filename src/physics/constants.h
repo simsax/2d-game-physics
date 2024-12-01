@@ -3,5 +3,6 @@
 
 extern const int FPS;
 extern const int MILLISECS_PER_FRAME;
+extern const int PIXELS_PER_METER;
 
 #endif

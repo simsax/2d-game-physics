@@ -1,10 +1,6 @@
 #include "vec2.h"
 #include <math.h>
 
-Vec2 vec2(float x) {
-    return (Vec2) {x, x};
-}
-
 Vec2 vec_sub(Vec2 a, Vec2 b) {
     return (Vec2) {a.x - b.x, a.y - b.y};
 }
@@ -13,8 +9,12 @@ Vec2 vec_add(Vec2 a, Vec2 b) {
     return (Vec2) {a.x + b.x, a.y + b.y};
 }
 
-Vec2 vec_scale(Vec2 v, float f) {
+Vec2 vec_mult(Vec2 v, float f) {
     return (Vec2) {v.x * f, v.y * f};
+}
+
+Vec2 vec_div(Vec2 v, float f) {
+    return (Vec2) {v.x / f, v.y / f};
 }
 
 Vec2 vec_rotate(Vec2 v, float angle) {

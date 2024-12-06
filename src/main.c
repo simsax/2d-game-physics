@@ -12,7 +12,6 @@ void run() {
     destroy();
 }
 
-
 int main(void)
 {
     run();

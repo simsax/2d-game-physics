@@ -2,6 +2,9 @@
 #include "vec2.h"
 #include <math.h>
 
+// TODO: in most functions we both calculate the magnitude and then normalize
+// some operations are repeated twice (es vec_magnitude followed by vec_normalize)
+
 Vec2 force_generate_drag(Particle* particle, float k) {
     Vec2 drag_force = VEC2(0, 0);
     float magnitude_squared = vec_magnitude_squared(particle->velocity);
@@ -26,4 +29,18 @@ Vec2 force_generate_gravitational(Particle* a, Particle* b, float G, float min_d
 
     Vec2 direction_normalized = vec_normalize(direction);
     return vec_mult(direction_normalized, a->mass * b->mass * G / direction_magnitude_squared);
+}
+
+Vec2 force_generate_spring_anchor(Particle* particle, Vec2 anchor, float rest_length, float k) {
+    Vec2 distance = vec_sub(particle->position, anchor);
+    float dl = vec_magnitude(distance) - rest_length;
+    Vec2 direction = vec_normalize(distance);
+    return vec_mult(direction, -dl * k);
+}
+
+Vec2 force_generate_spring_particle(Particle* a, Particle* b, float rest_length, float k) {
+    Vec2 distance = vec_sub(a->position, b->position);
+    float dl = vec_magnitude(distance) - rest_length;
+    Vec2 direction = vec_normalize(distance);
+    return vec_mult(direction, -dl * k);
 }

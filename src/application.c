@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 
-#define SHOW_FPS 0
+#define SHOW_FPS 1
 
 #if SHOW_FPS
 
@@ -27,19 +27,26 @@ static ParticleArray particles = DA_NULL;
 static Vec2 push_force = VEC2(0, 0);
 static Rectangle liquid;
 static bool left_mouse_down = false;
-Vec2 mouse_coord = VEC2(0, 0);
+static Vec2 mouse_coord = VEC2(0, 0);
+static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
+static float k = 500;
+static float rest_length = 80;
+
+// TODO: select closest with mouse, try a 2d plane of particles
 
 void setup() {
     open_window();
     running = true;
 
-    DA_APPEND(&particles, particle_create(200, 200, 1.0, 6)); 
-    DA_APPEND(&particles, particle_create(500, 500, 20.0, 20)); 
-    /*liquid.x = 0;*/
-    /*liquid.y = WINDOW_HEIGHT / 2.0;*/
-    /*liquid.height = WINDOW_HEIGHT / 2.0;*/
-    /*liquid.width = WINDOW_WIDTH;*/
+    float x_coord = WINDOW_WIDTH / 2.0;
+    float particle_offset = 80.0f;
+    float y_start = 120.0f;
 
+    int num_particles = 10;
+
+    for (int i = 0; i < num_particles; i++) {
+        DA_APPEND(&particles, particle_create(x_coord, y_start + particle_offset * i, 2.0, 10)); 
+    }
 }
 
 void destroy() {
@@ -93,31 +100,31 @@ void input() {
 }
 
 void update() {
-    static double prev_time = 0;
+    static float prev_time = 0;
     // wait until target frame time is reached
-    int time_to_wait = MILLISECS_PER_FRAME - (GetTime() - prev_time) * 1000;
+    float delta_time_prev_frame = GetTime() - prev_time;
+    float time_to_wait = SECS_PER_FRAME - delta_time_prev_frame;
     if (time_to_wait > 0) {
-        WaitTime((double)time_to_wait / 1000);
+        WaitTime(time_to_wait);
     }
 
-    float delta_time = GetTime() - prev_time;
-    if (delta_time > MILLISECS_PER_FRAME) {
+    // new frame begins
+    float cur_time = GetTime();
+    float delta_time = cur_time - prev_time;
+    if (delta_time > SECS_PER_FRAME) {
         // cap delta_time so that this thing is debuggable
-        delta_time = MILLISECS_PER_FRAME;
+        delta_time = SECS_PER_FRAME;
     }
+    prev_time = cur_time;
 
     #if SHOW_FPS
         frame_count++;
-        double cur_time = GetTime();
         if (cur_time - prev_time_fps >= 1.0f) {
             printf("FPS: %d\n", frame_count);
             frame_count = 0;
             prev_time_fps = cur_time;
         }
     #endif
-
-    prev_time = GetTime();
-
 
     // forces
     for (int i = 0; i < particles.count; i++) {
@@ -126,81 +133,94 @@ void update() {
         // force from arrow keys
         particle_add_force(particle, push_force);
 
-        /*Vec2 wind = VEC2(0.4 * PIXELS_PER_METER, 0);*/
-        /*Vec2 weight = VEC2(0, particle->mass * 9.8 * PIXELS_PER_METER);*/
+        // weight
+        Vec2 weight = VEC2(0.0, particle->mass * 9.8 * PIXELS_PER_METER);
+        particle_add_force(particle, weight);
 
+        /*Vec2 friction = force_generate_friction(particle, 5 * PIXELS_PER_METER);*/
+        /*particle_add_force(particle, friction);*/
 
-        /*particle_add_force(particle, weight);*/
-        Vec2 friction = force_generate_friction(particle, 5 * PIXELS_PER_METER);
-        particle_add_force(particle, friction);
+        // drag
+        Vec2 drag = force_generate_drag(particle, 0.001);
+        particle_add_force(particle, drag);
 
-        Vec2 attraction = force_generate_gravitational(
-                &particles.items[0], &particles.items[1], 3000, 5, 100);
+        bool first_particle = i == 0;
+        bool last_particle = i == (particles.count - 1);
+        if (first_particle) {
+            // apply spring force to the first particle
+            Vec2 spring_force = force_generate_spring_anchor(&particles.items[0], anchor, rest_length, k);
+            particle_add_force(&particles.items[0], spring_force);
+        }
 
-        particle_add_force(&particles.items[0], attraction);
-        particle_add_force(&particles.items[1], vec_mult(attraction, -1));
-
-        // apply drag if we are inside the liquid
-        /*if (particle->position.y >= liquid.y) {*/
-        /*    Vec2 drag = force_generate_drag(particle, 0.04);*/
-        /*    particle_add_force(particle, drag);*/
-        /*}*/
+        if (!last_particle) {
+            Particle* next_particle = &particles.items[i + 1];
+            Vec2 spring_force_this = force_generate_spring_particle(particle, next_particle, rest_length, k);
+            particle_add_force(particle, spring_force_this);
+            Vec2 spring_force_other = force_generate_spring_particle(next_particle, particle, rest_length, k);
+            particle_add_force(next_particle, spring_force_other);
+        }
     }
 
+    // integrate forces 
     for (int i = 0; i < particles.count; i++) {
         Particle* particle = &particles.items[i];
-
         particle_integrate(particle, delta_time);
     }
 
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
-
-        // limit particle inside boundaries
-        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
-            particle->position.y = WINDOW_HEIGHT - particle->radius;
-            particle->velocity.y *= -1;
-        }
-
-        if (particle->position.y < particle->radius) {
-            particle->position.y = particle->radius;
-            particle->velocity.y *= -1;
-        }
-
-        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
-            particle->position.x = WINDOW_WIDTH - particle->radius;
-            particle->velocity.x *= -1;
-        }
-
-        if (particle->position.x < particle->radius) {
-            particle->position.x = particle->radius;
-            particle->velocity.x *= -1;
-        }
-    }
+    // limit particles inside window boundaries
+    /*for (int i = 0; i < particles.count; i++) {*/
+    /*    Particle* particle = &particles.items[i];*/
+    /**/
+    /*    if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {*/
+    /*        particle->position.y = WINDOW_HEIGHT - particle->radius;*/
+    /*        particle->velocity.y *= -1;*/
+    /*    }*/
+    /**/
+    /*    if (particle->position.y < particle->radius) {*/
+    /*        particle->position.y = particle->radius;*/
+    /*        particle->velocity.y *= -1;*/
+    /*    }*/
+    /**/
+    /*    if (particle->position.x >= WINDOW_WIDTH - particle->radius) {*/
+    /*        particle->position.x = WINDOW_WIDTH - particle->radius;*/
+    /*        particle->velocity.x *= -1;*/
+    /*    }*/
+    /**/
+    /*    if (particle->position.x < particle->radius) {*/
+    /*        particle->position.x = particle->radius;*/
+    /*        particle->velocity.x *= -1;*/
+    /*    }*/
+    /*}*/
 }
 
 void render() {
     begin_frame();
     clear_screen(0x056263FF);
 
-    // draw liquid
-    /*draw_fill_rect(liquid.x, liquid.y, liquid.width, liquid.height, 0x13376EFF);*/
-
-    // draw particles
-    /*for (int i = 0; i < particles.count; i++) {*/
-    /*    Particle* particle = &particles.items[i];*/
-    /*    draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xFFFFFFFF);*/
-    /*}*/
+    // particles
+    for (int i = 0; i < particles.count; i++) {
+        Particle* particle = &particles.items[i];
+        bool first_particle = i == 0;
+        bool last_particle = i == (particles.count - 1);
+        if (first_particle) {
+            // first spring
+            draw_line(anchor.x, anchor.y, particle->position.x, particle->position.y, 0x313131FF);
+            // anchor
+            draw_fill_circle(anchor.x, anchor.y, 5, 0x551100FF);
+        }
+        if (!last_particle) {
+            Particle* next_particle = &particles.items[i + 1];
+            draw_line(particle->position.x, particle->position.y,
+                    next_particle->position.x, next_particle->position.y, 0x313131FF);
+        }
+        draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xFFFFFFFF);
+    }
 
     if (left_mouse_down) {
         Vec2 particle_pos = particles.items[0].position;
         draw_line(mouse_coord.x, mouse_coord.y, particle_pos.x, particle_pos.y, 0xFF0000FF);
     }
 
-    draw_fill_circle(particles.items[0].position.x, particles.items[0].position.y, particles.items[0].radius, 0xf2ff00FF);
-    draw_fill_circle(particles.items[1].position.x, particles.items[1].position.y, particles.items[1].radius, 0x1100ffFF);
-
     end_frame();
 }
-
 

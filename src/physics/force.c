@@ -1,6 +1,6 @@
 #include "force.h"
 #include "vec2.h"
-#include <math.h>
+#include "utils.h"
 
 // TODO: in most functions we both calculate the magnitude and then normalize
 // some operations are repeated twice (es vec_magnitude followed by vec_normalize)
@@ -25,7 +25,7 @@ Vec2 force_generate_gravitational(Particle* a, Particle* b, float G, float min_d
     float direction_magnitude_squared = vec_magnitude_squared(direction);
 
     // clamp between min_dist and max_dist
-    direction_magnitude_squared = fmax(fmin(max_dist, direction_magnitude_squared), min_dist);
+    direction_magnitude_squared = clamp(direction_magnitude_squared, min_dist, max_dist);
 
     Vec2 direction_normalized = vec_normalize(direction);
     return vec_mult(direction_normalized, a->mass * b->mass * G / direction_magnitude_squared);

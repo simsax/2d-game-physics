@@ -5,7 +5,7 @@
 #include "physics/force.h"
 #include "physics/particle.h"
 
-#include "physics/constants.h"
+#include "physics/utils.h"
 #include "physics/vec2.h"
 
 #include <stdio.h>
@@ -31,6 +31,10 @@ static Vec2 mouse_coord = VEC2(0, 0);
 static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
 static float k = 500;
 static float rest_length = 80;
+static int particle_radius = 10;
+static int hover_index = -1;
+static int hover_radius;
+static int selected_index = -1;
 
 // TODO: select closest with mouse, try a 2d plane of particles
 
@@ -45,7 +49,7 @@ void setup() {
     int num_particles = 10;
 
     for (int i = 0; i < num_particles; i++) {
-        DA_APPEND(&particles, particle_create(x_coord, y_start + particle_offset * i, 2.0, 10)); 
+        DA_APPEND(&particles, particle_create(x_coord, y_start + particle_offset * i, 2.0, particle_radius)); 
     }
 }
 
@@ -88,14 +92,34 @@ void input() {
     // mouse
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
-    if (!left_mouse_down && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        /*DA_APPEND(&particles, particle_create(GetMouseX(), GetMouseY(), 1.0f, 10)); */
+    
+    // check if hovering on a particle
+    hover_radius = fmax(particle_radius, 14);
+    if (selected_index == -1) {
+        for (int i = 0; i < particles.count; i++) {
+            Particle* particle = &particles.items[i];
+            
+            if (vec_magnitude(vec_sub(mouse_coord, particle->position)) <= hover_radius) {
+                hover_index = i;
+                break;
+            }
+
+            if (i == particles.count - 1)
+                hover_index = -1;
+        }
+    }
+
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
+        if (hover_index != -1) {
+            selected_index = hover_index;
+        } 
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
-        Vec2 impulse_direction = vec_sub(particles.items[0].position, mouse_coord);
-        float impulse_magnitude = vec_magnitude(impulse_direction) * 5;
-        particles.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);
+        selected_index = -1;
+        /*Vec2 impulse_direction = vec_sub(particles.items[0].position, mouse_coord);*/
+        /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
+        /*particles.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
     }
 }
 
@@ -164,7 +188,11 @@ void update() {
     // integrate forces 
     for (int i = 0; i < particles.count; i++) {
         Particle* particle = &particles.items[i];
-        particle_integrate(particle, delta_time);
+        if (i == selected_index) {
+            particle->position = mouse_coord;
+        } else {
+            particle_integrate(particle, delta_time);
+        }
     }
 
     // limit particles inside window boundaries
@@ -213,13 +241,17 @@ void render() {
             draw_line(particle->position.x, particle->position.y,
                     next_particle->position.x, next_particle->position.y, 0x313131FF);
         }
+        // particle
         draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xFFFFFFFF);
+
+        if (hover_index == i)
+            draw_circle(particle->position.x, particle->position.y, hover_radius, 0xFF0000FF);
     }
 
-    if (left_mouse_down) {
-        Vec2 particle_pos = particles.items[0].position;
-        draw_line(mouse_coord.x, mouse_coord.y, particle_pos.x, particle_pos.y, 0xFF0000FF);
-    }
+    /*if (left_mouse_down) {*/
+    /*    Vec2 particle_pos = particles.items[0].position;*/
+    /*    draw_line(mouse_coord.x, mouse_coord.y, particle_pos.x, particle_pos.y, 0xFF0000FF);*/
+    /*}*/
 
     end_frame();
 }

@@ -29,15 +29,16 @@ static Rectangle liquid;
 static bool left_mouse_down = false;
 static Vec2 mouse_coord = VEC2(0, 0);
 static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
-static float k = 2000;
+static float k = 1000;
+static float k_intern = 800;
 static float rest_length;
-static float rest_length_diag;
+static float rest_length_diameter;
 static int particle_radius = 10;
 static int hover_index = -1;
 static int hover_radius;
 static int selected_index = -1;
-static int rows = 2;
-static int cols = 2;
+static int rows = 0;
+static int num_particles = 16;
 
 // ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
 // curate all of them (for ex. gravitation add textures, planets and stars)
@@ -47,24 +48,23 @@ void setup() {
     open_window();
     running = true;
 
-    rest_length = 300;
-    rest_length_diag = rest_length * sqrt(2);
+    rest_length = 30;
+    rest_length_diameter = rest_length * 10 * 2;
     float particle_offset = rest_length;
-    float x_start = WINDOW_WIDTH / 2.0 - particle_offset * floor(cols / 2.0);
-    float y_start = 120.0f;
+    float x_center = WINDOW_WIDTH / 2.0;
+    float y_center = WINDOW_HEIGHT / 2.0;
 
-    for (int y = 0; y < rows; y++) {
-        for (int x = 0; x < cols; x++) {
-            DA_APPEND(
-                &particles, 
-                particle_create(
-                    x_start + x * particle_offset,
-                    y_start + y * particle_offset,
-                    2.0,
-                    particle_radius
-                    )
-                ); 
-        }
+    float period = num_particles / (2.0 * PI);
+    for (int i = 0; i < num_particles; i++) {
+        DA_APPEND(
+            &particles, 
+            particle_create(
+                x_center + sin(i / period) * rest_length_diameter / 2.0,
+                y_center + cos(i / period) * rest_length_diameter / 2.0,
+                2.0,
+                particle_radius
+                )
+            ); 
     }
 }
 
@@ -184,49 +184,24 @@ void update() {
         particle_add_force(particle, drag);
     }
 
+    int opposite_offset = num_particles / 2;
+    for (int i = 0; i < num_particles; i++) {
+        Particle* this_particle = &particles.items[i];
+        Particle* next_particle = &particles.items[(i + 1) % num_particles];
+        Particle* opposite_particle = &particles.items[(i + opposite_offset) % num_particles];
 
-    // springs
-    for (int y = 0; y < rows; y++) {
-        for (int x = 0; x < cols; x++) {
-            int index = x + y * cols;
-            Particle* particle = &particles.items[index];
-            // horizontal
-            if (x != cols - 1) {
-                int right_index = index + 1;
-                Particle* right_particle = &particles.items[right_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, right_particle, rest_length, k);
-                particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(right_particle, particle, rest_length, k);
-                particle_add_force(right_particle, spring_force_other);
-            }
-            // vertical
-            if (y != rows - 1) {
-                int below_index = index + cols;
-                Particle* below_particle = &particles.items[below_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, below_particle, rest_length, k);
-                particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(below_particle, particle, rest_length, k);
-                particle_add_force(below_particle, spring_force_other);
-            }
-            // main diagonal
-            if (x != cols - 1 && y != rows - 1) {
-                int diag_index = index + 1 + cols;
-                Particle* diag_particle = &particles.items[diag_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length_diag, k);
-                particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length_diag, k);
-                particle_add_force(diag_particle, spring_force_other);
-            }
-            // anti diagonal
-            if (x != 0 && y != rows - 1) {
-                int diag_index = index - 1 + cols;
-                Particle* diag_particle = &particles.items[diag_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length_diag, k);
-                particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length_diag, k);
-                particle_add_force(diag_particle, spring_force_other);
-            }
+        Vec2 spring_force_this = force_generate_spring_particle(this_particle, next_particle, rest_length, k);
+        particle_add_force(this_particle, spring_force_this);
+        Vec2 spring_force_other = force_generate_spring_particle(next_particle, this_particle, rest_length, k);
+        particle_add_force(next_particle, spring_force_other);
+
+        if (i < opposite_offset) {
+            spring_force_this = force_generate_spring_particle(this_particle, opposite_particle, rest_length_diameter, k_intern);
+            particle_add_force(this_particle, spring_force_this);
+            spring_force_other = force_generate_spring_particle(opposite_particle, this_particle, rest_length_diameter, k_intern);
+            particle_add_force(opposite_particle, spring_force_other);
         }
+
     }
 
     // integrate forces 
@@ -270,46 +245,21 @@ void render() {
     clear_screen(0x056263FF);
 
     uint32_t spring_color = 0x313131FF;
-
+    uint32_t spring_wheel_color = 0xAAAAAAFF;
 
     // springs
-    for (int y = 0; y < rows; y++) {
-        for (int x = 0; x < cols; x++) {
-            int index = x + y * cols;
-            Particle* particle = &particles.items[index];
-            // horizontal
-            if (x != cols - 1) {
-                int right_index = index + 1;
-                Particle* right_particle = &particles.items[right_index];
-                draw_line(particle->position.x, particle->position.y, 
-                        right_particle->position.x, right_particle->position.y,
-                        spring_color);
-            }
-            // vertical
-            if (y != rows - 1) {
-                int below_index = index + cols;
-                Particle* below_particle = &particles.items[below_index];
-                draw_line(particle->position.x, particle->position.y, 
-                        below_particle->position.x, below_particle->position.y,
-                        spring_color);
-            }
-            // main diagonal
-            if (x != cols - 1 && y != rows - 1) {
-                int diag_index = index + 1 + cols;
-                Particle* diag_particle = &particles.items[diag_index];
-                draw_line(particle->position.x, particle->position.y, 
-                        diag_particle->position.x, diag_particle->position.y,
-                        spring_color);
-            }
-            // anti diagonal
-            if (x != 0 && y != rows - 1) {
-                int diag_index = index - 1 + cols;
-                Particle* diag_particle = &particles.items[diag_index];
-                draw_line(particle->position.x, particle->position.y, 
-                        diag_particle->position.x, diag_particle->position.y,
-                        spring_color);
-            }
-        }
+    int opposite_offset = num_particles / 2;
+    for (int i = 0; i < num_particles; i++) {
+        Particle* this_particle = &particles.items[i];
+        Particle* next_particle = &particles.items[(i + 1) % num_particles];
+        Particle* opposite_particle = &particles.items[(i + opposite_offset) % num_particles];
+        draw_line(this_particle->position.x, this_particle->position.y, 
+                next_particle->position.x, next_particle->position.y,
+                spring_wheel_color);
+        if (i < opposite_offset)
+            draw_line(this_particle->position.x, this_particle->position.y, 
+                    opposite_particle->position.x, opposite_particle->position.y,
+                    spring_color);
     }
 
     // particles

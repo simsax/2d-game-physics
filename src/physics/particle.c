@@ -6,7 +6,6 @@ Particle particle_create(int x, int y, float mass, int radius) {
         .velocity = VEC2(0, 0), 
         .acceleration = VEC2(0, 0),
         .sum_forces = VEC2(0, 0),
-        .mass = mass,
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .radius = radius
     };
@@ -14,7 +13,6 @@ Particle particle_create(int x, int y, float mass, int radius) {
 
 void particle_init(Particle* particle, int x, int y, float mass, int radius) {
     particle->position = (Vec2) { .x = x, .y = y };
-    particle->mass = mass;
     particle->inv_mass = mass != 0 ? 1.0 / mass : 0;
     particle->velocity = VEC2(0, 0);
     particle->acceleration = VEC2(0, 0);

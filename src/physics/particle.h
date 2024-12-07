@@ -8,7 +8,6 @@ typedef struct {
     Vec2 velocity;
     Vec2 acceleration;
     Vec2 sum_forces;
-    float mass; // probably not needed
     float inv_mass;
     int radius;
 } Particle;

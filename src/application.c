@@ -24,6 +24,7 @@ bool running;
 
 // private globals
 static ParticleArray particles = DA_NULL;
+static Vec2Array anchors = DA_NULL;
 static Vec2 push_force = VEC2(0, 0);
 static Rectangle liquid;
 static bool left_mouse_down = false;
@@ -35,21 +36,38 @@ static int particle_radius = 10;
 static int hover_index = -1;
 static int hover_radius;
 static int selected_index = -1;
-
-// TODO: select closest with mouse, try a 2d plane of particles
+static int rows = 10;
+static int cols = 17;
 
 void setup() {
     open_window();
     running = true;
 
-    float x_coord = WINDOW_WIDTH / 2.0;
-    float particle_offset = 80.0f;
+    float particle_offset = rest_length;
+    float x_start = WINDOW_WIDTH / 2.0 - particle_offset * floor(cols / 2.0);
     float y_start = 120.0f;
 
-    int num_particles = 10;
-
-    for (int i = 0; i < num_particles; i++) {
-        DA_APPEND(&particles, particle_create(x_coord, y_start + particle_offset * i, 2.0, particle_radius)); 
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            DA_APPEND(
+                &particles, 
+                particle_create(
+                    x_start + x * particle_offset,
+                    y_start + y * particle_offset,
+                    2.0,
+                    particle_radius
+                    )
+                ); 
+            if (y == 0) {
+                DA_APPEND(
+                    &anchors, 
+                    VEC2(
+                        x_start + x * particle_offset,
+                        y_start + y * particle_offset - particle_offset
+                        )
+                    ); 
+            }
+        }
     }
 }
 
@@ -158,7 +176,7 @@ void update() {
         particle_add_force(particle, push_force);
 
         // weight
-        Vec2 weight = VEC2(0.0, particle->mass * 9.8 * PIXELS_PER_METER);
+        Vec2 weight = VEC2(0.0,  (9.8 / particle->inv_mass) * PIXELS_PER_METER);
         particle_add_force(particle, weight);
 
         /*Vec2 friction = force_generate_friction(particle, 5 * PIXELS_PER_METER);*/
@@ -167,21 +185,35 @@ void update() {
         // drag
         Vec2 drag = force_generate_drag(particle, 0.001);
         particle_add_force(particle, drag);
+    }
 
-        bool first_particle = i == 0;
-        bool last_particle = i == (particles.count - 1);
-        if (first_particle) {
-            // apply spring force to the first particle
-            Vec2 spring_force = force_generate_spring_anchor(&particles.items[0], anchor, rest_length, k);
-            particle_add_force(&particles.items[0], spring_force);
-        }
+    // anchors springs
+    for (int i = 0; i < anchors.count; i++) {
+        Vec2 spring_force = force_generate_spring_anchor(&particles.items[i], anchors.items[i], rest_length, k);
+        particle_add_force(&particles.items[i], spring_force);
+    }
 
-        if (!last_particle) {
-            Particle* next_particle = &particles.items[i + 1];
-            Vec2 spring_force_this = force_generate_spring_particle(particle, next_particle, rest_length, k);
-            particle_add_force(particle, spring_force_this);
-            Vec2 spring_force_other = force_generate_spring_particle(next_particle, particle, rest_length, k);
-            particle_add_force(next_particle, spring_force_other);
+    // springs
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            int index = x + y * cols;
+            Particle* particle = &particles.items[index];
+            if (x != cols - 1) {
+                int right_index = index + 1;
+                Particle* right_particle = &particles.items[right_index];
+                Vec2 spring_force_this = force_generate_spring_particle(particle, right_particle, rest_length, k);
+                particle_add_force(particle, spring_force_this);
+                Vec2 spring_force_other = force_generate_spring_particle(right_particle, particle, rest_length, k);
+                particle_add_force(right_particle, spring_force_other);
+            }
+            if (y != rows - 1) {
+                int below_index = index + cols;
+                Particle* below_particle = &particles.items[below_index];
+                Vec2 spring_force_this = force_generate_spring_particle(particle, below_particle, rest_length, k);
+                particle_add_force(particle, spring_force_this);
+                Vec2 spring_force_other = force_generate_spring_particle(below_particle, particle, rest_length, k);
+                particle_add_force(below_particle, spring_force_other);
+            }
         }
     }
 
@@ -225,33 +257,51 @@ void render() {
     begin_frame();
     clear_screen(0x056263FF);
 
+    uint32_t spring_color = 0x313131FF;
+
+    // anchor springs
+    for (int i = 0; i < anchors.count; i++) {
+        draw_line(anchors.items[i].x, anchors.items[i].y, 
+                particles.items[i].position.x,
+                particles.items[i].position.y, spring_color);
+    }
+
+    // springs
+    for (int y = 0; y < rows; y++) {
+        for (int x = 0; x < cols; x++) {
+            int index = x + y * cols;
+            Particle* particle = &particles.items[index];
+            if (x != cols - 1) {
+                int right_index = index + 1;
+                Particle* right_particle = &particles.items[right_index];
+                draw_line(particle->position.x, particle->position.y, 
+                        right_particle->position.x, right_particle->position.y,
+                        spring_color);
+            }
+            if (y != rows - 1) {
+                int below_index = index + cols;
+                Particle* below_particle = &particles.items[below_index];
+                draw_line(particle->position.x, particle->position.y, 
+                        below_particle->position.x, below_particle->position.y,
+                        spring_color);
+            }
+        }
+    }
+
+    // anchors
+    for (int i = 0; i < anchors.count; i++) {
+        Vec2 anchor = anchors.items[i];
+        draw_fill_circle(anchor.x, anchor.y, 5, 0x551100FF);
+    }
     // particles
     for (int i = 0; i < particles.count; i++) {
         Particle* particle = &particles.items[i];
-        bool first_particle = i == 0;
-        bool last_particle = i == (particles.count - 1);
-        if (first_particle) {
-            // first spring
-            draw_line(anchor.x, anchor.y, particle->position.x, particle->position.y, 0x313131FF);
-            // anchor
-            draw_fill_circle(anchor.x, anchor.y, 5, 0x551100FF);
-        }
-        if (!last_particle) {
-            Particle* next_particle = &particles.items[i + 1];
-            draw_line(particle->position.x, particle->position.y,
-                    next_particle->position.x, next_particle->position.y, 0x313131FF);
-        }
         // particle
-        draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xFFFFFFFF);
+        draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xEEEEEEFF);
 
         if (hover_index == i)
             draw_circle(particle->position.x, particle->position.y, hover_radius, 0xFF0000FF);
     }
-
-    /*if (left_mouse_down) {*/
-    /*    Vec2 particle_pos = particles.items[0].position;*/
-    /*    draw_line(mouse_coord.x, mouse_coord.y, particle_pos.x, particle_pos.y, 0xFF0000FF);*/
-    /*}*/
 
     end_frame();
 }

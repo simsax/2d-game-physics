@@ -28,7 +28,7 @@ Vec2 force_generate_gravitational(Particle* a, Particle* b, float G, float min_d
     direction_magnitude_squared = clamp(direction_magnitude_squared, min_dist, max_dist);
 
     Vec2 direction_normalized = vec_normalize(direction);
-    return vec_mult(direction_normalized, a->mass * b->mass * G / direction_magnitude_squared);
+    return vec_mult(direction_normalized, G / (direction_magnitude_squared * a->inv_mass * b->inv_mass));
 }
 
 Vec2 force_generate_spring_anchor(Particle* particle, Vec2 anchor, float rest_length, float k) {

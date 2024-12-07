@@ -24,27 +24,31 @@ bool running;
 
 // private globals
 static ParticleArray particles = DA_NULL;
-static Vec2Array anchors = DA_NULL;
 static Vec2 push_force = VEC2(0, 0);
 static Rectangle liquid;
 static bool left_mouse_down = false;
 static Vec2 mouse_coord = VEC2(0, 0);
 static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
-static float k = 500;
-static float rest_length = 80;
+static float k = 2000;
+static float rest_length;
+static float rest_length_diag;
 static int particle_radius = 10;
 static int hover_index = -1;
 static int hover_radius;
 static int selected_index = -1;
-static int rows = 10;
-static int cols = 17;
+static int rows = 2;
+static int cols = 2;
 
-// 2d physics
+// ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
+// curate all of them (for ex. gravitation add textures, planets and stars)
+// then post it in the raylib subreddit (give credit to pikuma as well)
 
 void setup() {
     open_window();
     running = true;
 
+    rest_length = 300;
+    rest_length_diag = rest_length * sqrt(2);
     float particle_offset = rest_length;
     float x_start = WINDOW_WIDTH / 2.0 - particle_offset * floor(cols / 2.0);
     float y_start = 120.0f;
@@ -60,15 +64,6 @@ void setup() {
                     particle_radius
                     )
                 ); 
-            if (y == 0) {
-                DA_APPEND(
-                    &anchors, 
-                    VEC2(
-                        x_start + x * particle_offset,
-                        y_start + y * particle_offset - particle_offset
-                        )
-                    ); 
-            }
         }
     }
 }
@@ -189,11 +184,6 @@ void update() {
         particle_add_force(particle, drag);
     }
 
-    // anchors springs
-    /*for (int i = 0; i < anchors.count; i++) {*/
-    /*    Vec2 spring_force = force_generate_spring_anchor(&particles.items[i], anchors.items[i], rest_length, k);*/
-    /*    particle_add_force(&particles.items[i], spring_force);*/
-    /*}*/
 
     // springs
     for (int y = 0; y < rows; y++) {
@@ -222,18 +212,18 @@ void update() {
             if (x != cols - 1 && y != rows - 1) {
                 int diag_index = index + 1 + cols;
                 Particle* diag_particle = &particles.items[diag_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length, k);
+                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length_diag, k);
                 particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length, k);
+                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length_diag, k);
                 particle_add_force(diag_particle, spring_force_other);
             }
             // anti diagonal
             if (x != 0 && y != rows - 1) {
                 int diag_index = index - 1 + cols;
                 Particle* diag_particle = &particles.items[diag_index];
-                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length, k);
+                Vec2 spring_force_this = force_generate_spring_particle(particle, diag_particle, rest_length_diag, k);
                 particle_add_force(particle, spring_force_this);
-                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length, k);
+                Vec2 spring_force_other = force_generate_spring_particle(diag_particle, particle, rest_length_diag, k);
                 particle_add_force(diag_particle, spring_force_other);
             }
         }
@@ -281,12 +271,6 @@ void render() {
 
     uint32_t spring_color = 0x313131FF;
 
-    /*// anchor springs*/
-    /*for (int i = 0; i < anchors.count; i++) {*/
-    /*    draw_line(anchors.items[i].x, anchors.items[i].y, */
-    /*            particles.items[i].position.x,*/
-    /*            particles.items[i].position.y, spring_color);*/
-    /*}*/
 
     // springs
     for (int y = 0; y < rows; y++) {
@@ -328,11 +312,6 @@ void render() {
         }
     }
 
-    // anchors
-    for (int i = 0; i < anchors.count; i++) {
-        Vec2 anchor = anchors.items[i];
-        draw_fill_circle(anchor.x, anchor.y, 5, 0x551100FF);
-    }
     // particles
     for (int i = 0; i < particles.count; i++) {
         Particle* particle = &particles.items[i];

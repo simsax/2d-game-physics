@@ -190,16 +190,14 @@ void update() {
         Particle* next_particle = &particles.items[(i + 1) % num_particles];
         Particle* opposite_particle = &particles.items[(i + opposite_offset) % num_particles];
 
-        Vec2 spring_force_this = force_generate_spring_particle(this_particle, next_particle, rest_length, k);
-        particle_add_force(this_particle, spring_force_this);
-        Vec2 spring_force_other = force_generate_spring_particle(next_particle, this_particle, rest_length, k);
-        particle_add_force(next_particle, spring_force_other);
+        Vec2 spring_force = force_generate_spring_particle(this_particle, next_particle, rest_length, k);
+        particle_add_force(this_particle, spring_force);
+        particle_add_force(next_particle, vec_mult(spring_force, -1));
 
         if (i < opposite_offset) {
-            spring_force_this = force_generate_spring_particle(this_particle, opposite_particle, rest_length_diameter, k_intern);
-            particle_add_force(this_particle, spring_force_this);
-            spring_force_other = force_generate_spring_particle(opposite_particle, this_particle, rest_length_diameter, k_intern);
-            particle_add_force(opposite_particle, spring_force_other);
+            spring_force = force_generate_spring_particle(this_particle, opposite_particle, rest_length_diameter, k_intern);
+            particle_add_force(this_particle, spring_force);
+            particle_add_force(opposite_particle, vec_mult(spring_force, -1));
         }
 
     }

@@ -30,7 +30,7 @@ static bool left_mouse_down = false;
 static Vec2 mouse_coord = VEC2(0, 0);
 static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
 static float k = 1000;
-static float k_intern = 800;
+static float k_intern = 80;
 static float rest_length;
 static float rest_length_diameter;
 static int particle_radius = 10;
@@ -48,8 +48,10 @@ void setup() {
     open_window();
     running = true;
 
+    /*rest_length_diameter = 600;*/
+    /*rest_length = rest_length_diameter * sinf(PI / num_particles);*/
     rest_length = 30;
-    rest_length_diameter = rest_length * 10 * 2;
+    rest_length_diameter = rest_length * 20;
     float particle_offset = rest_length;
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
@@ -138,6 +140,71 @@ void input() {
     }
 }
 
+static void constrain_euler() {
+    // limit particles inside window boundaries
+    for (int i = 0; i < particles.count; i++) {
+        Particle* particle = &particles.items[i];
+
+        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
+            particle->position.y = WINDOW_HEIGHT - particle->radius;
+            particle->velocity.y *= -1;
+        }
+
+        if (particle->position.y < particle->radius) {
+            particle->position.y = particle->radius;
+            particle->velocity.y *= -1;
+        }
+
+        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
+            particle->position.x = WINDOW_WIDTH - particle->radius;
+            particle->velocity.x *= -1;
+        }
+
+        if (particle->position.x < particle->radius) {
+            particle->position.x = particle->radius;
+            particle->velocity.x *= -1;
+        }
+    }
+}
+
+static void constrain_verlet() {
+    // limit particles inside window boundaries
+    for (int i = 0; i < particles.count; i++) {
+        Particle* particle = &particles.items[i];
+        Vec2 particle_velocity = vec_sub(particle->position, particle->old_position);
+
+        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
+            particle->position.y = WINDOW_HEIGHT - particle->radius;
+            particle->old_position.y = particle->position.y + particle_velocity.y;
+        }
+
+        if (particle->position.y < particle->radius) {
+            particle->position.y = particle->radius;
+            particle->old_position.y = particle->position.y + particle_velocity.y;
+        }
+
+        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
+            particle->position.x = WINDOW_WIDTH - particle->radius;
+            particle->old_position.x = particle->position.x + particle_velocity.x;
+        }
+
+        if (particle->position.x < particle->radius) {
+            particle->position.x = particle->radius;
+            particle->old_position.x = particle->position.x + particle_velocity.x;
+        }
+    }
+}
+
+void stick_position(Particle* a, Particle* b, float length) {
+    Vec2 position_diff = vec_sub(b->position, a->position);
+    float distance = vec_magnitude(position_diff);
+    float correction_delta = (distance - length) / 2.0f;
+    Vec2 correction_direction = vec_normalize(position_diff);
+    Vec2 correction = vec_mult(correction_direction, correction_delta);
+    a->position = vec_add(a->position, correction);
+    b->position = vec_add(b->position, vec_mult(correction, -1));
+}
+
 void update() {
     static float prev_time = 0;
     // wait until target frame time is reached
@@ -184,6 +251,7 @@ void update() {
         particle_add_force(particle, drag);
     }
 
+    // spring forces
     int opposite_offset = num_particles / 2;
     for (int i = 0; i < num_particles; i++) {
         Particle* this_particle = &particles.items[i];
@@ -209,33 +277,12 @@ void update() {
             particle->position = mouse_coord;
         } else {
             particle_integrate(particle, delta_time);
+            /*particle_integrate_verlet(particle, delta_time);*/
         }
     }
 
-    // limit particles inside window boundaries
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
-
-        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
-            particle->position.y = WINDOW_HEIGHT - particle->radius;
-            particle->velocity.y *= -1;
-        }
-
-        if (particle->position.y < particle->radius) {
-            particle->position.y = particle->radius;
-            particle->velocity.y *= -1;
-        }
-
-        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
-            particle->position.x = WINDOW_WIDTH - particle->radius;
-            particle->velocity.x *= -1;
-        }
-
-        if (particle->position.x < particle->radius) {
-            particle->position.x = particle->radius;
-            particle->velocity.x *= -1;
-        }
-    }
+    constrain_euler();
+    /*constrain_verlet();*/
 }
 
 void render() {

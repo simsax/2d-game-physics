@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "vec2.h"
-#include "particle.h"
 
 typedef struct {
     uint32_t capacity;
@@ -19,11 +18,13 @@ typedef struct {
     Vec2* items;
 } Vec2Array;
 
+typedef struct Body Body;
+
 typedef struct {
     uint32_t capacity;
     uint32_t count;
-    Particle* items;
-} ParticleArray;
+    Body* items;
+} BodyArray;
 
 #define START_CAPACITY 8
 

@@ -3,8 +3,8 @@
 #include "application.h"
 #include "graphics.h"
 #include "physics/force.h"
-#include "physics/particle.h"
-
+#include "physics/body.h"
+#include "physics/shape.h"
 #include "physics/utils.h"
 #include "physics/vec2.h"
 
@@ -23,22 +23,10 @@ static double prev_time_fps = 0.0;
 bool running;
 
 // private globals
-static ParticleArray particles = DA_NULL;
+static BodyArray bodies = DA_NULL;
 static Vec2 push_force = VEC2(0, 0);
-static Rectangle liquid;
 static bool left_mouse_down = false;
 static Vec2 mouse_coord = VEC2(0, 0);
-static Vec2 anchor = VEC2(WINDOW_WIDTH / 2.0, 30);
-static float k = 1000;
-static float k_intern = 80;
-static float rest_length;
-static float rest_length_diameter;
-static int particle_radius = 10;
-static int hover_index = -1;
-static int hover_radius;
-static int selected_index = -1;
-static int rows = 0;
-static int num_particles = 16;
 
 // ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
 // curate all of them (for ex. gravitation add textures, planets and stars)
@@ -48,30 +36,14 @@ void setup() {
     open_window();
     running = true;
 
-    /*rest_length_diameter = 600;*/
-    /*rest_length = rest_length_diameter * sinf(PI / num_particles);*/
-    rest_length = 30;
-    rest_length_diameter = rest_length * 20;
-    float particle_offset = rest_length;
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
-
-    float period = num_particles / (2.0 * PI);
-    for (int i = 0; i < num_particles; i++) {
-        DA_APPEND(
-            &particles, 
-            particle_create(
-                x_center + sin(i / period) * rest_length_diameter / 2.0,
-                y_center + cos(i / period) * rest_length_diameter / 2.0,
-                2.0,
-                particle_radius
-                )
-            ); 
-    }
+    
+    DA_APPEND(&bodies, body_create_circle(50, x_center, y_center, 1.0));
 }
 
 void destroy() {
-    DA_FREE(&particles); // useless because program is going to be closed (it's fine to leak memory if it's not in a loop)
+    DA_FREE(&bodies); // useless because program is going to be closed (it's fine to leak memory if it's not in a loop)
     close_window();
 }
 
@@ -110,99 +82,44 @@ void input() {
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
     
-    // check if hovering on a particle
-    hover_radius = fmax(particle_radius, 14);
-    if (selected_index == -1) {
-        for (int i = 0; i < particles.count; i++) {
-            Particle* particle = &particles.items[i];
-            
-            if (vec_magnitude(vec_sub(mouse_coord, particle->position)) <= hover_radius) {
-                hover_index = i;
-                break;
-            }
-
-            if (i == particles.count - 1)
-                hover_index = -1;
-        }
-    }
-
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
-        if (hover_index != -1) {
-            selected_index = hover_index;
-        } 
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
-        selected_index = -1;
-        /*Vec2 impulse_direction = vec_sub(particles.items[0].position, mouse_coord);*/
+        /*Vec2 impulse_direction = vec_sub(bodies.items[0].position, mouse_coord);*/
         /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
-        /*particles.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
+        /*bodies.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
     }
 }
 
 static void constrain_euler() {
-    // limit particles inside window boundaries
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
+    // limit bodies inside window boundaries
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
 
-        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
-            particle->position.y = WINDOW_HEIGHT - particle->radius;
-            particle->velocity.y *= -1;
-        }
+        if (body->shape.type == CIRCLE_SHAPE) {
+            CircleShape* circle_shape = &body->shape.as.circle;
+            if (body->position.y >= WINDOW_HEIGHT - circle_shape->radius) {
+                body->position.y = WINDOW_HEIGHT - circle_shape->radius;
+                body->velocity.y *= -1;
+            }
 
-        if (particle->position.y < particle->radius) {
-            particle->position.y = particle->radius;
-            particle->velocity.y *= -1;
-        }
+            if (body->position.y < circle_shape->radius) {
+                body->position.y = circle_shape->radius;
+                body->velocity.y *= -1;
+            }
 
-        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
-            particle->position.x = WINDOW_WIDTH - particle->radius;
-            particle->velocity.x *= -1;
-        }
+            if (body->position.x >= WINDOW_WIDTH - circle_shape->radius) {
+                body->position.x = WINDOW_WIDTH - circle_shape->radius;
+                body->velocity.x *= -1;
+            }
 
-        if (particle->position.x < particle->radius) {
-            particle->position.x = particle->radius;
-            particle->velocity.x *= -1;
-        }
-    }
-}
-
-static void constrain_verlet() {
-    // limit particles inside window boundaries
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
-        Vec2 particle_velocity = vec_sub(particle->position, particle->old_position);
-
-        if (particle->position.y >= WINDOW_HEIGHT - particle->radius) {
-            particle->position.y = WINDOW_HEIGHT - particle->radius;
-            particle->old_position.y = particle->position.y + particle_velocity.y;
-        }
-
-        if (particle->position.y < particle->radius) {
-            particle->position.y = particle->radius;
-            particle->old_position.y = particle->position.y + particle_velocity.y;
-        }
-
-        if (particle->position.x >= WINDOW_WIDTH - particle->radius) {
-            particle->position.x = WINDOW_WIDTH - particle->radius;
-            particle->old_position.x = particle->position.x + particle_velocity.x;
-        }
-
-        if (particle->position.x < particle->radius) {
-            particle->position.x = particle->radius;
-            particle->old_position.x = particle->position.x + particle_velocity.x;
+            if (body->position.x < circle_shape->radius) {
+                body->position.x = circle_shape->radius;
+                body->velocity.x *= -1;
+            }
         }
     }
-}
-
-void stick_position(Particle* a, Particle* b, float length) {
-    Vec2 position_diff = vec_sub(b->position, a->position);
-    float distance = vec_magnitude(position_diff);
-    float correction_delta = (distance - length) / 2.0f;
-    Vec2 correction_direction = vec_normalize(position_diff);
-    Vec2 correction = vec_mult(correction_direction, correction_delta);
-    a->position = vec_add(a->position, correction);
-    b->position = vec_add(b->position, vec_mult(correction, -1));
 }
 
 void update() {
@@ -233,88 +150,47 @@ void update() {
     #endif
 
     // forces
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
 
         // force from arrow keys
-        particle_add_force(particle, push_force);
+        body_add_force(body, push_force);
 
         // weight
-        Vec2 weight = VEC2(0.0,  (9.8 / particle->inv_mass) * PIXELS_PER_METER);
-        particle_add_force(particle, weight);
+        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
+        body_add_force(body, weight);
 
-        /*Vec2 friction = force_generate_friction(particle, 5 * PIXELS_PER_METER);*/
-        /*particle_add_force(particle, friction);*/
+        float torque = 20;
+        body_add_torque(body, torque);
 
-        // drag
-        Vec2 drag = force_generate_drag(particle, 0.001);
-        particle_add_force(particle, drag);
-    }
-
-    // spring forces
-    int opposite_offset = num_particles / 2;
-    for (int i = 0; i < num_particles; i++) {
-        Particle* this_particle = &particles.items[i];
-        Particle* next_particle = &particles.items[(i + 1) % num_particles];
-        Particle* opposite_particle = &particles.items[(i + opposite_offset) % num_particles];
-
-        Vec2 spring_force = force_generate_spring_particle(this_particle, next_particle, rest_length, k);
-        particle_add_force(this_particle, spring_force);
-        particle_add_force(next_particle, vec_mult(spring_force, -1));
-
-        if (i < opposite_offset) {
-            spring_force = force_generate_spring_particle(this_particle, opposite_particle, rest_length_diameter, k_intern);
-            particle_add_force(this_particle, spring_force);
-            particle_add_force(opposite_particle, vec_mult(spring_force, -1));
-        }
+        /*Vec2 friction = force_generate_friction(body, 5 * PIXELS_PER_METER);*/
+        /*body_add_force(body, friction);*/
 
     }
 
     // integrate forces 
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
-        if (i == selected_index) {
-            particle->position = mouse_coord;
-        } else {
-            particle_integrate(particle, delta_time);
-            /*particle_integrate_verlet(particle, delta_time);*/
-        }
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
+        body_integrate_linear(body, delta_time);
+        body_integrate_angular(body, delta_time);
     }
 
     constrain_euler();
-    /*constrain_verlet();*/
 }
 
 void render() {
     begin_frame();
     clear_screen(0x056263FF);
 
-    uint32_t spring_color = 0x313131FF;
-    uint32_t spring_wheel_color = 0xAAAAAAFF;
-
-    // springs
-    int opposite_offset = num_particles / 2;
-    for (int i = 0; i < num_particles; i++) {
-        Particle* this_particle = &particles.items[i];
-        Particle* next_particle = &particles.items[(i + 1) % num_particles];
-        Particle* opposite_particle = &particles.items[(i + opposite_offset) % num_particles];
-        draw_line(this_particle->position.x, this_particle->position.y, 
-                next_particle->position.x, next_particle->position.y,
-                spring_wheel_color);
-        if (i < opposite_offset)
-            draw_line(this_particle->position.x, this_particle->position.y, 
-                    opposite_particle->position.x, opposite_particle->position.y,
-                    spring_color);
-    }
-
-    // particles
-    for (int i = 0; i < particles.count; i++) {
-        Particle* particle = &particles.items[i];
-        // particle
-        draw_fill_circle(particle->position.x, particle->position.y, particle->radius, 0xEEEEEEFF);
-
-        if (hover_index == i)
-            draw_circle(particle->position.x, particle->position.y, hover_radius, 0xFF0000FF);
+    // bodies
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
+        if (body->shape.type == CIRCLE_SHAPE) {
+            draw_circle_line(body->position.x, body->position.y,
+                    body->shape.as.circle.radius, body->rotation, 0xEEEEEEFF);
+        } else {
+            // TODO
+        }
     }
 
     end_frame();

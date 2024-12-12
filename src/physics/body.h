@@ -38,5 +38,6 @@ void body_add_force(Body* body, Vec2 force);
 void body_add_torque(Body* body, float torque);
 void body_clear_forces(Body* body);
 void body_clear_torque(Body* body);
+void body_update(Body* body, float dt);
 
 #endif //  BODY_H

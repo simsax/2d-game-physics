@@ -2,6 +2,7 @@
 #include "array.h"
 #include "shape.h"
 #include "vec2.h"
+#include <stdbool.h>
 
 Body body_create_circle(float radius, int x, int y, float mass) {
     Shape shape = shape_create_circle(radius);
@@ -121,3 +122,15 @@ void body_clear_torque(Body* body) {
     body->sum_torque = 0;
 }
 
+void body_update(Body* body, float dt) {
+    // integrate forces to find new position and rotation
+    body_integrate_linear(body, dt);
+    body_integrate_angular(body, dt);
+
+    // rotate and translate body vertices from local space to world space
+    bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
+    if (is_polygon) {
+        PolygonShape* polygon_shape = &body->shape.as.polygon;
+        shape_polygon_update_vertices(polygon_shape, body->rotation, body->position);
+    }
+}

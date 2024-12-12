@@ -39,10 +39,18 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    DA_APPEND(&bodies, body_create_circle(50, x_center, y_center, 1.0));
+    DA_APPEND(&bodies, body_create_box(200, 100, x_center, y_center, 1.0));
 }
 
 void destroy() {
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
+        bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
+        if (is_polygon) {
+            free(body->shape.as.polygon.local_vertices.items);
+            free(body->shape.as.polygon.world_vertices.items);
+        }
+    }
     DA_FREE(&bodies); // useless because program is going to be closed (it's fine to leak memory if it's not in a loop)
     close_window();
 }
@@ -157,10 +165,11 @@ void update() {
         body_add_force(body, push_force);
 
         // weight
-        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
-        body_add_force(body, weight);
+        /*Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);*/
+        /*body_add_force(body, weight);*/
 
-        float torque = 20;
+
+        float torque = 200;
         body_add_torque(body, torque);
 
         /*Vec2 friction = force_generate_friction(body, 5 * PIXELS_PER_METER);*/
@@ -168,11 +177,10 @@ void update() {
 
     }
 
-    // integrate forces 
+    // update body
     for (int i = 0; i < bodies.count; i++) {
         Body* body = &bodies.items[i];
-        body_integrate_linear(body, delta_time);
-        body_integrate_angular(body, delta_time);
+        body_update(body, delta_time);
     }
 
     constrain_euler();
@@ -188,8 +196,10 @@ void render() {
         if (body->shape.type == CIRCLE_SHAPE) {
             draw_circle_line(body->position.x, body->position.y,
                     body->shape.as.circle.radius, body->rotation, 0xEEEEEEFF);
-        } else {
-            // TODO
+        }  
+        if (body->shape.type == BOX_SHAPE) {
+            BoxShape* box_shape = &body->shape.as.box;
+            draw_polygon(body->position.x, body->position.y, &box_shape->polygon.world_vertices, 0xFFFFFFFF);
         }
     }
 

@@ -14,7 +14,8 @@ typedef struct {
 } CircleShape;
 
 typedef struct {
-    Vec2Array vertices;
+    Vec2Array local_vertices;
+    Vec2Array world_vertices;
 } PolygonShape;
 
 typedef struct {
@@ -36,5 +37,8 @@ Shape shape_create_circle(float radius);
 Shape shape_create_polygon(Vec2Array vertices);
 Shape shape_create_box(float width, float height);
 float shape_moment_of_inertia(Shape* shape);
+
+// rotate and translate shape vertices from "local space" to "world space"
+void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 position);
 
 #endif // SHAPE_H

@@ -3,6 +3,7 @@
 
 #include "vec2.h"
 #include "shape.h"
+#include <stdbool.h>
 
 typedef struct Body {
     Shape shape;
@@ -24,6 +25,9 @@ typedef struct Body {
     // mass and moment of inertia
     float inv_mass;
     float inv_I;
+
+    // temp
+    bool is_colliding;
 } Body;
 
 Body body_create_circle(float radius, int x, int y, float mass);

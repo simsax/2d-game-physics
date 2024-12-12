@@ -7,7 +7,9 @@
 #include "physics/shape.h"
 #include "physics/utils.h"
 #include "physics/vec2.h"
+#include "physics/collision.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 #define SHOW_FPS 1
@@ -39,7 +41,8 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    DA_APPEND(&bodies, body_create_box(200, 100, x_center, y_center, 1.0));
+    DA_APPEND(&bodies, body_create_circle(100, 100, 100, 1.0));
+    DA_APPEND(&bodies, body_create_circle(50, 500, 100, 1.0));
 }
 
 void destroy() {
@@ -100,35 +103,6 @@ void input() {
     }
 }
 
-static void constrain_euler() {
-    // limit bodies inside window boundaries
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
-
-        if (body->shape.type == CIRCLE_SHAPE) {
-            CircleShape* circle_shape = &body->shape.as.circle;
-            if (body->position.y >= WINDOW_HEIGHT - circle_shape->radius) {
-                body->position.y = WINDOW_HEIGHT - circle_shape->radius;
-                body->velocity.y *= -1;
-            }
-
-            if (body->position.y < circle_shape->radius) {
-                body->position.y = circle_shape->radius;
-                body->velocity.y *= -1;
-            }
-
-            if (body->position.x >= WINDOW_WIDTH - circle_shape->radius) {
-                body->position.x = WINDOW_WIDTH - circle_shape->radius;
-                body->velocity.x *= -1;
-            }
-
-            if (body->position.x < circle_shape->radius) {
-                body->position.x = circle_shape->radius;
-                body->velocity.x *= -1;
-            }
-        }
-    }
-}
 
 void update() {
     static float prev_time = 0;
@@ -165,12 +139,15 @@ void update() {
         body_add_force(body, push_force);
 
         // weight
-        /*Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);*/
-        /*body_add_force(body, weight);*/
+        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
+        body_add_force(body, weight);
 
+        // wind
+        Vec2 wind = VEC2(20.0 * PIXELS_PER_METER, 0);
+        body_add_force(body, wind);
 
-        float torque = 200;
-        body_add_torque(body, torque);
+        /*float torque = 200;*/
+        /*body_add_torque(body, torque);*/
 
         /*Vec2 friction = force_generate_friction(body, 5 * PIXELS_PER_METER);*/
         /*body_add_force(body, friction);*/
@@ -183,7 +160,47 @@ void update() {
         body_update(body, delta_time);
     }
 
-    constrain_euler();
+    // collision detection
+    for (int i = 0; i < bodies.count - 1; i++) {
+        for (int j = i + 1; j < bodies.count; j++) {
+            Body* a = &bodies.items[i];
+            Body* b = &bodies.items[j];
+            a->is_colliding = false;
+            b->is_colliding = false;
+            if (collision_iscolliding(a, b)) {
+                a->is_colliding = true;
+                b->is_colliding = true;
+            }
+        }
+    }
+
+    // limit bodies inside window boundaries
+    for (int i = 0; i < bodies.count; i++) {
+        Body* body = &bodies.items[i];
+
+        if (body->shape.type == CIRCLE_SHAPE) {
+            CircleShape* circle_shape = &body->shape.as.circle;
+            if (body->position.y >= WINDOW_HEIGHT - circle_shape->radius) {
+                body->position.y = WINDOW_HEIGHT - circle_shape->radius;
+                body->velocity.y *= -1;
+            }
+
+            if (body->position.y < circle_shape->radius) {
+                body->position.y = circle_shape->radius;
+                body->velocity.y *= -1;
+            }
+
+            if (body->position.x >= WINDOW_WIDTH - circle_shape->radius) {
+                body->position.x = WINDOW_WIDTH - circle_shape->radius;
+                body->velocity.x *= -1;
+            }
+
+            if (body->position.x < circle_shape->radius) {
+                body->position.x = circle_shape->radius;
+                body->velocity.x *= -1;
+            }
+        }
+    }
 }
 
 void render() {
@@ -193,13 +210,14 @@ void render() {
     // bodies
     for (int i = 0; i < bodies.count; i++) {
         Body* body = &bodies.items[i];
+        uint32_t color = body->is_colliding ? 0xFF0000FF : 0xFFFFFFFF;
         if (body->shape.type == CIRCLE_SHAPE) {
             draw_circle_line(body->position.x, body->position.y,
-                    body->shape.as.circle.radius, body->rotation, 0xEEEEEEFF);
+                    body->shape.as.circle.radius, body->rotation, color);
         }  
         if (body->shape.type == BOX_SHAPE) {
             BoxShape* box_shape = &body->shape.as.box;
-            draw_polygon(body->position.x, body->position.y, &box_shape->polygon.world_vertices, 0xFFFFFFFF);
+            draw_polygon(body->position.x, body->position.y, &box_shape->polygon.world_vertices, color);
         }
     }
 

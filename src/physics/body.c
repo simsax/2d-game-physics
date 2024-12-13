@@ -3,6 +3,7 @@
 #include "shape.h"
 #include "vec2.h"
 #include <stdbool.h>
+#include <math.h>
 
 Body body_create_circle(float radius, int x, int y, float mass) {
     Shape shape = shape_create_circle(radius);
@@ -86,6 +87,9 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
 }
 
 void body_integrate_linear(Body* body, float dt) {
+    if (body_is_static(body))
+        return;
+
     // find acceleration based on the forces being applied and the mass
     body->acceleration = vec_mult(body->sum_forces, body->inv_mass);
 
@@ -99,6 +103,9 @@ void body_integrate_linear(Body* body, float dt) {
 }
 
 void body_integrate_angular(Body* body, float dt) {
+    if (body_is_static(body))
+        return;
+
     body->angular_acceleration = body->sum_torque * body->inv_I;
     body->angular_velocity += body->angular_acceleration * dt;
     body->rotation += body->angular_velocity * dt;
@@ -133,4 +140,9 @@ void body_update(Body* body, float dt) {
         PolygonShape* polygon_shape = &body->shape.as.polygon;
         shape_polygon_update_vertices(polygon_shape, body->rotation, body->position);
     }
+}
+
+bool body_is_static(Body* body) {
+    float epsilon = 1e-8;
+    return fabs(body->inv_mass - 0.0f) < epsilon;
 }

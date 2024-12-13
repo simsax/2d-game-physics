@@ -43,5 +43,6 @@ void body_add_torque(Body* body, float torque);
 void body_clear_forces(Body* body);
 void body_clear_torque(Body* body);
 void body_update(Body* body, float dt);
+bool body_is_static(Body* body);
 
 #endif //  BODY_H

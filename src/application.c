@@ -8,6 +8,7 @@
 #include "physics/utils.h"
 #include "physics/vec2.h"
 #include "physics/collision.h"
+#include "physics/contact.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -92,6 +93,8 @@ void input() {
     // mouse
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
+
+    bodies.items[0].position = mouse_coord;
     
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
@@ -105,6 +108,10 @@ void input() {
 
 
 void update() {
+    // for debug draws
+    begin_frame();
+    clear_screen(0x056263FF);
+
     static float prev_time = 0;
     // wait until target frame time is reached
     float delta_time_prev_frame = GetTime() - prev_time;
@@ -139,12 +146,12 @@ void update() {
         body_add_force(body, push_force);
 
         // weight
-        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
-        body_add_force(body, weight);
+        /*Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);*/
+        /*body_add_force(body, weight);*/
 
         // wind
-        Vec2 wind = VEC2(20.0 * PIXELS_PER_METER, 0);
-        body_add_force(body, wind);
+        /*Vec2 wind = VEC2(20.0 * PIXELS_PER_METER, 0);*/
+        /*body_add_force(body, wind);*/
 
         /*float torque = 200;*/
         /*body_add_torque(body, torque);*/
@@ -160,16 +167,27 @@ void update() {
         body_update(body, delta_time);
     }
 
+    for (int i = 0; i < bodies.count; i++) {
+        bodies.items[i].is_colliding = false;
+    }
+
     // collision detection
     for (int i = 0; i < bodies.count - 1; i++) {
         for (int j = i + 1; j < bodies.count; j++) {
             Body* a = &bodies.items[i];
             Body* b = &bodies.items[j];
-            a->is_colliding = false;
-            b->is_colliding = false;
-            if (collision_iscolliding(a, b)) {
+            Contact contact;
+            if (collision_iscolliding(a, b, &contact)) {
+                // debug contact information
+                draw_fill_circle(contact.start.x, contact.start.y, 3, 0xFF00FFFF);
+                draw_fill_circle(contact.end.x, contact.end.y, 3, 0xFF00FFFF);
+                draw_line(contact.start.x, contact.start.y, 
+                        contact.start.x + contact.normal.x * 15,
+                        contact.start.y + contact.normal.y * 15,
+                        0xFF00FFFF);
                 a->is_colliding = true;
                 b->is_colliding = true;
+                contact_resolve_penetration(&contact);
             }
         }
     }
@@ -204,9 +222,6 @@ void update() {
 }
 
 void render() {
-    begin_frame();
-    clear_screen(0x056263FF);
-
     // bodies
     for (int i = 0; i < bodies.count; i++) {
         Body* body = &bodies.items[i];

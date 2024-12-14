@@ -43,12 +43,12 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
 bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact) {
     PolygonShape* a_shape = &a->shape.as.polygon;
     PolygonShape* b_shape = &b->shape.as.polygon;
-    Vec2 a_axis, b_axis;
+    Vec2 a_normal, b_normal;
     Vec2 a_point, b_point;
-    float ab_separation = shape_polygon_find_min_separation(a_shape, b_shape, &a_axis, &a_point);
+    float ab_separation = shape_polygon_find_min_separation(a_shape, b_shape, &a_normal, &a_point);
     if (ab_separation >= 0)
         return false;
-    float ba_separation = shape_polygon_find_min_separation(b_shape, a_shape, &b_axis, &b_point);
+    float ba_separation = shape_polygon_find_min_separation(b_shape, a_shape, &b_normal, &b_point);
     if (ba_separation >= 0)
         return false;
 
@@ -57,12 +57,12 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact) {
 
     if (ab_separation > ba_separation) {
         contact->depth = -ab_separation;
-        contact->normal = vec_normal(a_axis);
+        contact->normal = a_normal;
         contact->start = a_point;
         contact->end = vec_add(a_point, vec_mult(contact->normal, contact->depth));
     } else {
         contact->depth = -ba_separation;
-        contact->normal = vec_mult(vec_normal(b_axis), -1); // normal always goes from A to B
+        contact->normal = vec_mult(b_normal, -1); // normal always goes from A to B
         contact->start = vec_add(b_point, vec_mult(contact->normal, -contact->depth));
         contact->end = b_point;
     }

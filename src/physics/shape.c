@@ -84,7 +84,7 @@ Vec2 shape_polygon_edge_at(PolygonShape* shape, int index) {
             );
 }
 
-float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis, Vec2* point) {
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis_normal, Vec2* point) {
     float separation = -FLT_MAX; // -inf
 
     for (int i = 0; i < a->world_vertices.count; i++) {
@@ -105,7 +105,7 @@ float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* 
         }
         if (min_separation > separation) {
             separation = min_separation;
-            *axis = edge;
+            *axis_normal = normal;
             *point = min_vertex;
         }
 

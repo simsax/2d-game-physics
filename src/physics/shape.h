@@ -47,6 +47,6 @@ void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 positi
 // index = 1 -> Edge BC
 // index = 2 -> Edge CA
 Vec2 shape_polygon_edge_at(PolygonShape* shape, int index);
-float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis, Vec2* point);
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis_normal, Vec2* point);
 
 #endif // SHAPE_H

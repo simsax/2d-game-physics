@@ -41,4 +41,12 @@ float shape_moment_of_inertia(Shape* shape);
 // rotate and translate shape vertices from "local space" to "world space"
 void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 position);
 
+// Find edge at a certain vertex index.
+// Ex. triangle with vertices A, B, C
+// index = 0 -> Edge AB
+// index = 1 -> Edge BC
+// index = 2 -> Edge CA
+Vec2 shape_polygon_edge_at(PolygonShape* shape, int index);
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis, Vec2* point);
+
 #endif // SHAPE_H

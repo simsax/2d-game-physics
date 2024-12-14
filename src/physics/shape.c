@@ -1,4 +1,6 @@
 #include "shape.h"
+#include <float.h>
+#include <math.h>
 
 Shape shape_create_circle(float radius) {
     return (Shape) {
@@ -73,3 +75,46 @@ void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 positi
         shape->world_vertices.items[i] = vec_add(shape->world_vertices.items[i], position);
     }
 }
+
+Vec2 shape_polygon_edge_at(PolygonShape* shape, int index) {
+    int num_vertices = shape->world_vertices.count;
+    return vec_sub(
+                shape->world_vertices.items[(index + 1) % num_vertices],
+                shape->world_vertices.items[index]
+            );
+}
+
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis, Vec2* point) {
+    float separation = -FLT_MAX; // -inf
+
+    for (int i = 0; i < a->world_vertices.count; i++) {
+        Vec2 va = a->world_vertices.items[i];
+        Vec2 edge = shape_polygon_edge_at(a, i);
+        Vec2 normal = vec_normal(edge);
+
+        float min_separation = FLT_MAX;
+        Vec2 min_vertex;
+        for (int j = 0; j < b->world_vertices.count; j++) {
+            Vec2 vb = b->world_vertices.items[j];
+            Vec2 va_vb = vec_sub(vb, va); // vector from va to vb
+            float proj = vec_dot(va_vb, normal);
+            if (proj < min_separation) {
+                min_separation = proj;
+                min_vertex = vb;
+            }
+        }
+        if (min_separation > separation) {
+            separation = min_separation;
+            *axis = edge;
+            *point = min_vertex;
+        }
+
+        if (separation > 0) {
+            // there is no collision, so no need to keep looping to find the "best" separation
+            return separation;
+        }
+    }
+
+    return separation;
+}
+

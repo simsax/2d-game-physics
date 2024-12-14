@@ -12,7 +12,8 @@ Body body_create_circle(float radius, int x, int y, float mass) {
         .shape = shape,
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0 
+        .inv_I = I != 0 ? 1.0 / I : 0 ,
+        .restitution = 1.0f
     };
 }
 
@@ -23,7 +24,8 @@ Body body_create_polygon(Vec2Array vertices, int x, int y, float mass) {
         .shape = shape,
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0 
+        .inv_I = I != 0 ? 1.0 / I : 0,
+        .restitution = 1.0f
     };
 }
 
@@ -34,7 +36,8 @@ Body body_create_box(float width, float height, int x, int y, float mass) {
         .shape = shape,
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0 
+        .inv_I = I != 0 ? 1.0 / I : 0,
+        .restitution = 1.0f
     };
 }
 
@@ -52,6 +55,7 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->restitution = 1.0f;
 }
 
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass) {
@@ -68,6 +72,7 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->restitution = 1.0f;
 }
 
 void body_init_box(Body* body, float width, float height, int x, int y, float mass) {
@@ -84,6 +89,7 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->restitution = 1.0f;
 }
 
 void body_integrate_linear(Body* body, float dt) {
@@ -146,3 +152,11 @@ bool body_is_static(Body* body) {
     float epsilon = 1e-8;
     return fabs(body->inv_mass - 0.0f) < epsilon;
 }
+
+void body_apply_impulse(Body* body, Vec2 jn) {
+    if (body_is_static(body))
+        return;
+
+    body->velocity = vec_add(body->velocity, vec_mult(jn, body->inv_mass));
+}
+

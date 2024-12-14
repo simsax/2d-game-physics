@@ -26,6 +26,9 @@ typedef struct Body {
     float inv_mass;
     float inv_I;
 
+    // coefficient of restitution
+    float restitution;
+
     // temp
     bool is_colliding;
 } Body;
@@ -44,5 +47,6 @@ void body_clear_forces(Body* body);
 void body_clear_torque(Body* body);
 void body_update(Body* body, float dt);
 bool body_is_static(Body* body);
+void body_apply_impulse(Body* body, Vec2 jn);
 
 #endif //  BODY_H

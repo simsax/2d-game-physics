@@ -44,10 +44,10 @@ Vec2 vec_normal(Vec2 v) {
     return vec_normalize((Vec2) { v.y, -v.x });
 }
 
-float dot(Vec2 a, Vec2 b) {
+float vec_dot(Vec2 a, Vec2 b) {
     return a.x * b.x + a.y * b.y;
 }
 
-float cross(Vec2 a, Vec2 b) {
+float vec_cross(Vec2 a, Vec2 b) {
     return a.x * b.y - b.x * a.y;
 }

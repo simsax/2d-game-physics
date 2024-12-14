@@ -42,8 +42,7 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    DA_APPEND(&bodies, body_create_circle(100, 100, 100, 1.0));
-    DA_APPEND(&bodies, body_create_circle(50, 500, 100, 1.0));
+    DA_APPEND(&bodies, body_create_circle(200, x_center, y_center, 0.0));
 }
 
 void destroy() {
@@ -93,13 +92,13 @@ void input() {
     // mouse
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
-
-    bodies.items[0].position = mouse_coord;
     
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
+        DA_APPEND(&bodies, body_create_circle(40, mouse_coord.x, mouse_coord.y, 1.0));
+        bodies.items[bodies.count - 1].restitution = 0.2f;
         /*Vec2 impulse_direction = vec_sub(bodies.items[0].position, mouse_coord);*/
         /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
         /*bodies.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
@@ -146,12 +145,12 @@ void update() {
         body_add_force(body, push_force);
 
         // weight
-        /*Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);*/
-        /*body_add_force(body, weight);*/
+        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
+        body_add_force(body, weight);
 
         // wind
-        /*Vec2 wind = VEC2(20.0 * PIXELS_PER_METER, 0);*/
-        /*body_add_force(body, wind);*/
+        Vec2 wind = VEC2(2.0 * PIXELS_PER_METER, 0);
+        body_add_force(body, wind);
 
         /*float torque = 200;*/
         /*body_add_torque(body, torque);*/
@@ -178,7 +177,9 @@ void update() {
             Body* b = &bodies.items[j];
             Contact contact;
             if (collision_iscolliding(a, b, &contact)) {
-                // debug contact information
+                contact_resolve_collision(&contact);
+
+                // draw debug contact information
                 draw_fill_circle(contact.start.x, contact.start.y, 3, 0xFF00FFFF);
                 draw_fill_circle(contact.end.x, contact.end.y, 3, 0xFF00FFFF);
                 draw_line(contact.start.x, contact.start.y, 
@@ -187,7 +188,6 @@ void update() {
                         0xFF00FFFF);
                 a->is_colliding = true;
                 b->is_colliding = true;
-                contact_resolve_penetration(&contact);
             }
         }
     }

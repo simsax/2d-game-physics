@@ -16,5 +16,6 @@ typedef struct {
 } Contact;
 
 void contact_resolve_penetration(Contact* contact);
+void contact_resolve_collision(Contact *contact);
 
 #endif // CONTACT_H

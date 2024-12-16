@@ -26,8 +26,9 @@ typedef struct Body {
     float inv_mass;
     float inv_I;
 
-    // coefficient of restitution
+    // coefficients of restitution and friction
     float restitution;
+    float friction;
 
     // temp
     bool is_colliding;

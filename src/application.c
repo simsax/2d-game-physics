@@ -29,6 +29,7 @@ bool running;
 static BodyArray bodies = DA_NULL;
 static Vec2 push_force = VEC2(0, 0);
 static bool left_mouse_down = false;
+static bool right_mouse_down = false;
 static Vec2 mouse_coord = VEC2(0, 0);
 
 // ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
@@ -45,11 +46,30 @@ void setup() {
     // floor
     DA_APPEND(&bodies, body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0));
     bodies.items[0].restitution = 0.2;
+    bodies.items[0].friction = 0.2;
+
+    // left wall
+    DA_APPEND(&bodies, body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0));
+    bodies.items[1].restitution = 0.2;
+    bodies.items[1].friction = 0.2;
+
+    // right wall
+    DA_APPEND(&bodies, body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0));
+    bodies.items[2].restitution = 0.2;
+    bodies.items[2].friction = 0.2;
+
+    // static ball
+    /*DA_APPEND(&bodies, body_create_circle(250, x_center, y_center, 0.0));*/
+    /*bodies.items[3].rotation = 1.4;*/
+    /*bodies.items[3].restitution = 0.5;*/
+    /*bodies.items[3].friction = 1.0;*/
 
     // static box
-    DA_APPEND(&bodies, body_create_box(250, 250, x_center, y_center, 0.0));
-    bodies.items[1].rotation = 1.4;
-    bodies.items[1].restitution = 0.5;
+    DA_APPEND(&bodies, body_create_box(400, 100, x_center, y_center, 0.0));
+    /*bodies.items[3].rotation = 1.4;*/
+    /*bodies.items[3].angular_velocity = 2;*/
+    bodies.items[3].restitution = 0.5;
+    bodies.items[3].friction = 0.0;
 }
 
 void destroy() {
@@ -102,13 +122,21 @@ void input() {
     
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
+    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        right_mouse_down = true;
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
-        DA_APPEND(&bodies, body_create_box(50, 50, mouse_coord.x, mouse_coord.y, 1.0));
-        /*bodies.items[bodies.count - 1].restitution = 0.2f;*/
+        DA_APPEND(&bodies, body_create_circle(50, mouse_coord.x, mouse_coord.y, 1.0));
+        bodies.items[bodies.count - 1].restitution = 0.9f;
+        bodies.items[bodies.count - 1].friction = 0.5f;
         /*Vec2 impulse_direction = vec_sub(bodies.items[0].position, mouse_coord);*/
         /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
         /*bodies.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
+    } else if (right_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
+        right_mouse_down = false;
+        DA_APPEND(&bodies, body_create_box(50, 50, mouse_coord.x, mouse_coord.y, 1.0));
+        bodies.items[bodies.count - 1].restitution = 0.2f;
+        bodies.items[bodies.count - 1].friction = 0.5f;
     }
 }
 
@@ -195,34 +223,6 @@ void update() {
                         0xFF00FFFF);
                 a->is_colliding = true;
                 b->is_colliding = true;
-            }
-        }
-    }
-
-    // limit bodies inside window boundaries
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
-
-        if (body->shape.type == CIRCLE_SHAPE) {
-            CircleShape* circle_shape = &body->shape.as.circle;
-            if (body->position.y >= WINDOW_HEIGHT - circle_shape->radius) {
-                body->position.y = WINDOW_HEIGHT - circle_shape->radius;
-                body->velocity.y *= -1;
-            }
-
-            if (body->position.y < circle_shape->radius) {
-                body->position.y = circle_shape->radius;
-                body->velocity.y *= -1;
-            }
-
-            if (body->position.x >= WINDOW_WIDTH - circle_shape->radius) {
-                body->position.x = WINDOW_WIDTH - circle_shape->radius;
-                body->velocity.x *= -1;
-            }
-
-            if (body->position.x < circle_shape->radius) {
-                body->position.x = circle_shape->radius;
-                body->velocity.x *= -1;
             }
         }
     }

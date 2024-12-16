@@ -13,7 +13,8 @@ Body body_create_circle(float radius, int x, int y, float mass) {
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .inv_I = I != 0 ? 1.0 / I : 0 ,
-        .restitution = 1.0f
+        .restitution = 1.0f,
+        .friction = 0.7f
     };
 }
 
@@ -25,7 +26,8 @@ Body body_create_polygon(Vec2Array vertices, int x, int y, float mass) {
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .inv_I = I != 0 ? 1.0 / I : 0,
-        .restitution = 1.0f
+        .restitution = 1.0f,
+        .friction = 0.7f
     };
 }
 
@@ -37,7 +39,8 @@ Body body_create_box(float width, float height, int x, int y, float mass) {
         .position = VEC2(x, y),
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .inv_I = I != 0 ? 1.0 / I : 0,
-        .restitution = 1.0f
+        .restitution = 1.0f,
+        .friction = 0.7f
     };
 }
 
@@ -56,6 +59,7 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
     body->restitution = 1.0f;
+    body->friction = 0.7f;
 }
 
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass) {
@@ -73,6 +77,7 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
     body->restitution = 1.0f;
+    body->friction = 0.7f;
 }
 
 void body_init_box(Body* body, float width, float height, int x, int y, float mass) {
@@ -90,6 +95,7 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
     body->restitution = 1.0f;
+    body->friction = 0.7f;
 }
 
 void body_integrate_linear(Body* body, float dt) {

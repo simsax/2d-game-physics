@@ -153,10 +153,24 @@ bool body_is_static(Body* body) {
     return fabs(body->inv_mass - 0.0f) < epsilon;
 }
 
-void body_apply_impulse(Body* body, Vec2 jn) {
+void body_apply_impulse(Body* body, Vec2 jn, Vec2 r) {
+    if (body_is_static(body))
+        return;
+
+    body->velocity = vec_add(body->velocity, vec_mult(jn, body->inv_mass));
+    body->angular_velocity += vec_cross(r, jn) * body->inv_I;
+}
+
+void body_apply_impulse_linear(Body* body, Vec2 jn) {
     if (body_is_static(body))
         return;
 
     body->velocity = vec_add(body->velocity, vec_mult(jn, body->inv_mass));
 }
 
+void body_apply_impulse_angular(Body *body, Vec2 jn, Vec2 r) {
+    if (body_is_static(body))
+        return;
+
+    body->angular_velocity += vec_cross(r, jn) * body->inv_I;;
+}

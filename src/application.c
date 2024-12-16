@@ -42,10 +42,14 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    DA_APPEND(&bodies, body_create_box(250, 250, x_center, y_center, 1.0));
-    DA_APPEND(&bodies, body_create_box(250, 250, x_center, y_center, 1.0));
-    bodies.items[0].angular_velocity = 0.4;
-    bodies.items[1].angular_velocity = 0.1;
+    // floor
+    DA_APPEND(&bodies, body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0));
+    bodies.items[0].restitution = 0.2;
+
+    // static box
+    DA_APPEND(&bodies, body_create_box(250, 250, x_center, y_center, 0.0));
+    bodies.items[1].rotation = 1.4;
+    bodies.items[1].restitution = 0.5;
 }
 
 void destroy() {
@@ -95,14 +99,12 @@ void input() {
     // mouse
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
-
-    bodies.items[0].position = mouse_coord;
     
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = true;
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
-        /*DA_APPEND(&bodies, body_create_circle(40, mouse_coord.x, mouse_coord.y, 1.0));*/
+        DA_APPEND(&bodies, body_create_box(50, 50, mouse_coord.x, mouse_coord.y, 1.0));
         /*bodies.items[bodies.count - 1].restitution = 0.2f;*/
         /*Vec2 impulse_direction = vec_sub(bodies.items[0].position, mouse_coord);*/
         /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
@@ -150,8 +152,8 @@ void update() {
         body_add_force(body, push_force);
 
         // weight
-        /*Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);*/
-        /*body_add_force(body, weight);*/
+        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
+        body_add_force(body, weight);
 
         // wind
         /*Vec2 wind = VEC2(2.0 * PIXELS_PER_METER, 0);*/
@@ -182,7 +184,7 @@ void update() {
             Body* b = &bodies.items[j];
             Contact contact;
             if (collision_iscolliding(a, b, &contact)) {
-                /*contact_resolve_collision(&contact);*/
+                contact_resolve_collision(&contact);
 
                 // draw debug contact information
                 draw_fill_circle(contact.start.x, contact.start.y, 3, 0xFF00FFFF);
@@ -230,7 +232,8 @@ void render() {
     // bodies
     for (int i = 0; i < bodies.count; i++) {
         Body* body = &bodies.items[i];
-        uint32_t color = body->is_colliding ? 0xFF0000FF : 0xFFFFFFFF;
+        /*uint32_t color = body->is_colliding ? 0xFF0000FF : 0xFFFFFFFF;*/
+        uint32_t color = 0xFFFFFFFF;
         if (body->shape.type == CIRCLE_SHAPE) {
             draw_circle_line(body->position.x, body->position.y,
                     body->shape.as.circle.radius, body->rotation, color);

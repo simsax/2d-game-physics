@@ -47,6 +47,8 @@ void body_clear_forces(Body* body);
 void body_clear_torque(Body* body);
 void body_update(Body* body, float dt);
 bool body_is_static(Body* body);
-void body_apply_impulse(Body* body, Vec2 jn);
+void body_apply_impulse(Body* body, Vec2 jn, Vec2 r);
+void body_apply_impulse_linear(Body* body, Vec2 jn);
+void body_apply_impulse_angular(Body* body, Vec2 jn, Vec2 r);
 
 #endif //  BODY_H

@@ -1,7 +1,7 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
-#include "array.h"
+#include "vec2.h"
 
 typedef enum {
     CIRCLE_SHAPE,

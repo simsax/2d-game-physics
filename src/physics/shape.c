@@ -1,6 +1,6 @@
 #include "shape.h"
 #include <float.h>
-#include <math.h>
+#include "array.h"
 
 Shape shape_create_circle(float radius) {
     return (Shape) {

@@ -8,6 +8,6 @@
 bool collision_iscolliding(Body* a, Body* b, Contact* contact);
 bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact);
 bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact);
-/*bool collision_iscolliding_polygoncircle(Body* a, Body* b);*/
+bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contact);
 
 #endif // COLLISION_H

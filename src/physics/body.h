@@ -34,6 +34,12 @@ typedef struct Body {
     bool is_colliding;
 } Body;
 
+typedef struct {
+    uint32_t capacity;
+    uint32_t count;
+    Body* items;
+} BodyArray;
+
 Body body_create_circle(float radius, int x, int y, float mass);
 Body body_create_polygon(Vec2Array vertices, int x, int y, float mass);
 Body body_create_box(float width, float height, int x, int y, float mass);

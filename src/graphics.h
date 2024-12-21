@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 #include "raylib.h"
-#include "physics/array.h"
+
+// ugly but what should I do
+#include "physics/vec2.h"
 
 #define WINDOW_HEIGHT 1080
 #define WINDOW_WIDTH 1920

@@ -1,6 +1,8 @@
 #ifndef VEC2_H
 #define VEC2_H
 
+#include <stdint.h>
+
 #define VEC2(x, y) (Vec2) {(x), (y)}
 #define vec_scale vec_mult
 
@@ -8,6 +10,12 @@ typedef struct {
     float x;
     float y;
 } Vec2;
+
+typedef struct {
+    uint32_t capacity;
+    uint32_t count;
+    Vec2* items;
+} Vec2Array;
 
 Vec2 vec_sub(Vec2 a, Vec2 b);
 Vec2 vec_add(Vec2 a, Vec2 b);

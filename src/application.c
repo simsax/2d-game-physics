@@ -2,6 +2,7 @@
 
 #include "application.h"
 #include "graphics.h"
+#include "physics/array.h"
 #include "physics/force.h"
 #include "physics/body.h"
 #include "physics/shape.h"
@@ -43,33 +44,26 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    // floor
-    DA_APPEND(&bodies, body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0));
-    bodies.items[0].restitution = 0.2;
-    bodies.items[0].friction = 0.2;
+    Body* floor = DA_NEXT_PTR(&bodies);
+    *floor = body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
+    floor->restitution = 0.2;
+    floor->friction = 0.2;
 
-    // left wall
-    DA_APPEND(&bodies, body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0));
-    bodies.items[1].restitution = 0.2;
-    bodies.items[1].friction = 0.2;
+    Body* left_wall = DA_NEXT_PTR(&bodies);
+    *left_wall = body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0);
+    left_wall->restitution = 0.2;
+    left_wall->friction = 0.2;
 
-    // right wall
-    DA_APPEND(&bodies, body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0));
-    bodies.items[2].restitution = 0.2;
-    bodies.items[2].friction = 0.2;
+    Body* right_wall = DA_NEXT_PTR(&bodies);
+    *right_wall = body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0);
+    right_wall->restitution = 0.2;
+    right_wall->friction = 0.2;
 
-    // static ball
-    /*DA_APPEND(&bodies, body_create_circle(250, x_center, y_center, 0.0));*/
-    /*bodies.items[3].rotation = 1.4;*/
-    /*bodies.items[3].restitution = 0.5;*/
-    /*bodies.items[3].friction = 1.0;*/
-
-    // static box
-    DA_APPEND(&bodies, body_create_box(400, 100, x_center, y_center, 0.0));
-    /*bodies.items[3].rotation = 1.4;*/
-    /*bodies.items[3].angular_velocity = 2;*/
-    bodies.items[3].restitution = 0.5;
-    bodies.items[3].friction = 0.0;
+    Body* static_box = DA_NEXT_PTR(&bodies);
+    *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
+    static_box->rotation = 1.4;
+    static_box->restitution = 0.2;
+    static_box->friction = 0.2;
 }
 
 void destroy() {
@@ -81,7 +75,7 @@ void destroy() {
             free(body->shape.as.polygon.world_vertices.items);
         }
     }
-    DA_FREE(&bodies); // useless because program is going to be closed (it's fine to leak memory if it's not in a loop)
+    DA_FREE(&bodies); // useless because program is going to be closed (let it leak)
     close_window();
 }
 
@@ -126,17 +120,16 @@ void input() {
         right_mouse_down = true;
     } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
         left_mouse_down = false;
-        DA_APPEND(&bodies, body_create_circle(50, mouse_coord.x, mouse_coord.y, 1.0));
-        bodies.items[bodies.count - 1].restitution = 0.9f;
-        bodies.items[bodies.count - 1].friction = 0.5f;
-        /*Vec2 impulse_direction = vec_sub(bodies.items[0].position, mouse_coord);*/
-        /*float impulse_magnitude = vec_magnitude(impulse_direction) * 5;*/
-        /*bodies.items[0].velocity = vec_mult(vec_normalize(impulse_direction), impulse_magnitude);*/
+        Body* new_circle = DA_NEXT_PTR(&bodies);
+        *new_circle = body_create_circle(30, mouse_coord.x, mouse_coord.y, 1.0);
+        new_circle->restitution = 1.0f;
+        new_circle->friction = 1.0f;
     } else if (right_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
         right_mouse_down = false;
-        DA_APPEND(&bodies, body_create_box(50, 50, mouse_coord.x, mouse_coord.y, 1.0));
-        bodies.items[bodies.count - 1].restitution = 0.2f;
-        bodies.items[bodies.count - 1].friction = 0.5f;
+        Body* new_box = DA_NEXT_PTR(&bodies);
+        *new_box = body_create_box(50, 50, mouse_coord.x, mouse_coord.y, 1.0);
+        new_box->restitution = 0.2f;
+        new_box->friction = 0.2f;
     }
 }
 
@@ -192,7 +185,6 @@ void update() {
 
         /*Vec2 friction = force_generate_friction(body, 5 * PIXELS_PER_METER);*/
         /*body_add_force(body, friction);*/
-
     }
 
     // update body

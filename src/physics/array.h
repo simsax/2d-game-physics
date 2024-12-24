@@ -10,6 +10,12 @@ typedef struct {
     int* items;
 } IntArray;
 
+typedef struct {
+    uint32_t capacity;
+    uint32_t count;
+    float* items;
+} FloatArray;
+
 #define START_CAPACITY 8
 
 // idea stolen from Tsoding (https://gist.github.com/rexim/b5b0c38f53157037923e7cdd77ce685d)

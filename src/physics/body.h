@@ -31,10 +31,11 @@ typedef struct Body {
     float restitution;
     float friction;
 
+    // hacks below
     // temp
     bool is_colliding;
 
-    // raylib texture
+    // TODO: move this into Entity struct
     Texture2D texture;
 } Body;
 

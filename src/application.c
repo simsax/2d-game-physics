@@ -10,6 +10,7 @@
 #include "physics/vec2.h"
 #include "physics/collision.h"
 #include "physics/contact.h"
+#include "physics/world.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -28,7 +29,7 @@ bool running;
 static bool debug = false;
 
 // private globals
-static BodyArray bodies = DA_NULL;
+static World world;
 static Vec2 push_force = VEC2(0, 0);
 static bool left_mouse_down = false;
 static bool right_mouse_down = false;
@@ -53,45 +54,39 @@ void setup() {
     open_window();
     running = true;
 
+    world = world_create(-9.8);
+
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    Body* floor = DA_NEXT_PTR(&bodies);
+    Body* floor = world_new_body(&world);
     *floor = body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
     floor->restitution = 0.8;
     floor->friction = 0.2;
 
-    Body* left_wall = DA_NEXT_PTR(&bodies);
+    Body* left_wall = world_new_body(&world);
     *left_wall = body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0);
     left_wall->restitution = 0.2;
     left_wall->friction = 0.2;
 
-    Body* right_wall = DA_NEXT_PTR(&bodies);
+    Body* right_wall = world_new_body(&world); 
     *right_wall = body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0);
     right_wall->restitution = 0.2;
     right_wall->friction = 0.2;
 
-    Body* static_box = DA_NEXT_PTR(&bodies);
+    Body* static_box = world_new_body(&world);
     *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
     static_box->friction = 0.2;
     body_set_texture(static_box, "./assets/crate.png");
+
+    Vec2 wind = VEC2(0.5 * PIXELS_PER_METER, 0);
+    world_add_force(&world, wind);
 }
 
 void destroy() {
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
-        bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
-        if (is_polygon) {
-            free(body->shape.as.polygon.local_vertices.items);
-            free(body->shape.as.polygon.world_vertices.items);
-        }
-        if (body->texture.id) {
-            UnloadTexture(body->texture);
-        }
-    }
-    DA_FREE(&bodies); // useless because program is going to be closed (let it leak)
+    world_free(&world);
     close_window();
 }
 
@@ -141,7 +136,7 @@ void input() {
         left_mouse_down = false;
 
         //circle
-        Body* new_circle = DA_NEXT_PTR(&bodies);
+        Body* new_circle = world_new_body(&world);
         *new_circle = body_create_circle(30, mouse_coord.x, mouse_coord.y, 1.0);
         new_circle->restitution = 1.0f;
         new_circle->friction = 1.0f;
@@ -150,19 +145,19 @@ void input() {
         right_mouse_down = false;
 
         // box
-        /*Body* new_box = DA_NEXT_PTR(&bodies);*/
-        /**new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 5.0);*/
-        /*new_box->restitution = 0.2f;*/
-        /*new_box->friction = 0.2f;*/
-        /*body_set_texture(new_box, "./assets/crate.png");*/
+        Body* new_box = world_new_body(&world);
+        *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 5.0);
+        new_box->restitution = 0.2f;
+        new_box->friction = 0.2f;
+        body_set_texture(new_box, "./assets/crate.png");
 
         // polygon
-        Body* new_poly = DA_NEXT_PTR(&bodies);
-        Vec2Array vertices = make_regular_polygon(5, 80);
-        *new_poly = body_create_polygon(vertices, mouse_coord.x, mouse_coord.y, 1.0);
-        new_poly->restitution = 0.2f;
-        new_poly->friction = 0.2f;
-        free(vertices.items);
+        /*Body* new_poly = world_new_body(&world);*/
+        /*Vec2Array vertices = make_regular_polygon(5, 80);*/
+        /**new_poly = body_create_polygon(vertices, mouse_coord.x, mouse_coord.y, 1.0);*/
+        /*new_poly->restitution = 0.2f;*/
+        /*new_poly->friction = 0.2f;*/
+        /*free(vertices.items);*/
     }
 }
 
@@ -198,61 +193,7 @@ void update() {
         }
     #endif
 
-    // forces
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
-
-        // force from arrow keys
-        body_add_force(body, push_force);
-
-        // weight
-        Vec2 weight = VEC2(0.0,  (9.8 / body->inv_mass) * PIXELS_PER_METER);
-        body_add_force(body, weight);
-
-        // wind
-        /*Vec2 wind = VEC2(2.0 * PIXELS_PER_METER, 0);*/
-        /*body_add_force(body, wind);*/
-
-        /*float torque = 200;*/
-        /*body_add_torque(body, torque);*/
-
-        /*Vec2 friction = force_generate_friction(body, 5 * PIXELS_PER_METER);*/
-        /*body_add_force(body, friction);*/
-    }
-
-    // update body
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
-        body_update(body, delta_time);
-    }
-
-    for (int i = 0; i < bodies.count; i++) {
-        bodies.items[i].is_colliding = false;
-    }
-
-    // collision detection
-    for (int i = 0; i < bodies.count - 1; i++) {
-        for (int j = i + 1; j < bodies.count; j++) {
-            Body* a = &bodies.items[i];
-            Body* b = &bodies.items[j];
-            Contact contact;
-            if (collision_iscolliding(a, b, &contact)) {
-                contact_resolve_collision(&contact);
-
-                if (debug) {
-                    // draw debug contact information
-                    draw_fill_circle(contact.start.x, contact.start.y, 3, 0xFF00FFFF);
-                    draw_fill_circle(contact.end.x, contact.end.y, 3, 0xFF00FFFF);
-                    draw_line(contact.start.x, contact.start.y, 
-                            contact.start.x + contact.normal.x * 15,
-                            contact.start.y + contact.normal.y * 15,
-                            0xFF00FFFF);
-                    a->is_colliding = true;
-                    b->is_colliding = true;
-                }
-            }
-        }
-    }
+    world_update(&world, delta_time);
 }
 
 // TODO: map from my Vec2 type to raylib's Vector2 before rendering
@@ -261,8 +202,8 @@ void update() {
 
 void render() {
     // bodies
-    for (int i = 0; i < bodies.count; i++) {
-        Body* body = &bodies.items[i];
+    for (int i = 0; i < world.bodies.count; i++) {
+        Body* body = &world.bodies.items[i];
         uint32_t color = 0xFFFFFFFF;
         if (body->shape.type == CIRCLE_SHAPE) {
             if (!debug && body->texture.id) {

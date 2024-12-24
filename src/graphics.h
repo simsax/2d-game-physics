@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "raylib.h"
 
-// ugly but what should I do
+// TODO: remove
 #include "physics/vec2.h"
 
 #define WINDOW_HEIGHT 1080
@@ -21,9 +21,12 @@ void draw_fill_circle(int x, int y, int radius, uint32_t color);
 void draw_circle_line(int x, int y, int radius, float angle, uint32_t color);
 void draw_rect(int x, int y, int width, int height, uint32_t color);
 void draw_fill_rect(int x, int y, int width, int height, uint32_t color);
-void draw_polygon(int x, int y, Vec2Array* vertices, uint32_t color);
-void draw_fill_polygon(int x, int y, Vec2Array* vertices, uint32_t color);
-void draw_texture(int x, int y, int width, int height, float rotation, Texture* texture);
+void draw_polygon(int x, int y, Vec2Array vertices, uint32_t color);
+void draw_fill_polygon(int x, int y, Vec2Array vertices, uint32_t color);
+// TODO
+/*void draw_polygon(int x, int y, Vector2 vertices[], int count, uint32_t color);*/
+/*void draw_fill_polygon(int x, int y, Vector2 vertices[], int count, uint32_t color);*/
+void draw_texture(int x, int y, int width, int height, float rotation, Texture2D* texture);
 
 #endif // GRAPHICS_H
 

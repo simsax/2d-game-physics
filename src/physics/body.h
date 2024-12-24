@@ -3,6 +3,7 @@
 
 #include "vec2.h"
 #include "shape.h"
+#include <raylib.h>
 #include <stdbool.h>
 
 typedef struct Body {
@@ -32,6 +33,9 @@ typedef struct Body {
 
     // temp
     bool is_colliding;
+
+    // raylib texture
+    Texture2D texture;
 } Body;
 
 typedef struct {
@@ -42,6 +46,7 @@ typedef struct {
 
 Body body_create_circle(float radius, int x, int y, float mass);
 Body body_create_polygon(Vec2Array vertices, int x, int y, float mass);
+void body_set_texture(Body* body, const char* file_path);
 Body body_create_box(float width, float height, int x, int y, float mass);
 void body_init_circle(Body* body, float circle_radius, int x, int y, float mass);
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass);
@@ -57,5 +62,6 @@ bool body_is_static(Body* body);
 void body_apply_impulse(Body* body, Vec2 jn, Vec2 r);
 void body_apply_impulse_linear(Body* body, Vec2 jn);
 void body_apply_impulse_angular(Body* body, Vec2 jn, Vec2 r);
+void body_set_texture(Body* body, const char* file_path);
 
 #endif //  BODY_H

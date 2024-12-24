@@ -6,7 +6,6 @@ CC = cc
 CFLAGS = -std=c11 -Wall -Wextra -pedantic -MP -MMD
 LDLIBS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
 
-
 all: debug
 debug: CFLAGS += -O0 -g
 debug: $(BUILD_DIR)/$(TARGET_EXE)

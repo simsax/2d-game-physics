@@ -3,8 +3,6 @@
 #include "shape.h"
 #include "vec2.h"
 #include <float.h>
-// debug
-#include "../graphics.h"
 
 bool collision_iscolliding(Body* a, Body* b, Contact* contact) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
@@ -79,8 +77,6 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact) {
     return true;
 }
 
-#include <stdio.h>
-
 bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contact) {
     // compute the nearest edge
     PolygonShape* polygon_shape = &polygon->shape.as.polygon;
@@ -115,8 +111,6 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
             }
         }
     }
-    draw_fill_circle(min_cur_vertex.x, min_cur_vertex.y, 5, 0xFF0000FF);
-    draw_fill_circle(min_next_vertex.x, min_next_vertex.y, 5, 0xFF0000FF);
 
     // compute collision information
     float circle_radius = circle->shape.as.circle.radius;

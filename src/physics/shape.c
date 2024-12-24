@@ -10,7 +10,21 @@ Shape shape_create_circle(float radius) {
 }
 
 Shape shape_create_polygon(Vec2Array vertices) {
-    return (Shape) {};
+    Vec2Array local_vertices = DA_NULL;
+    Vec2Array world_vertices = DA_NULL;
+
+    for (int i = 0; i < vertices.count; i++) {
+        DA_APPEND(&local_vertices, vertices.items[i]);
+        DA_APPEND(&world_vertices, vertices.items[i]);
+    }
+
+    return (Shape) {
+        .type = POLYGON_SHAPE,
+        .as.polygon = (PolygonShape) {
+            .local_vertices = local_vertices,
+            .world_vertices = world_vertices,
+        }
+    };
 }
 
 Shape shape_create_box(float width, float height) {
@@ -30,7 +44,6 @@ Shape shape_create_box(float width, float height) {
     DA_APPEND(&world_vertices, VEC2(half_width, -half_height));
     DA_APPEND(&world_vertices, VEC2(half_width, half_height));
     DA_APPEND(&world_vertices, VEC2(-half_width, half_height));
-
 
     return (Shape) {
         .type = BOX_SHAPE,
@@ -54,7 +67,7 @@ float shape_moment_of_inertia(Shape* shape) {
         } break;
         case POLYGON_SHAPE: {
             // TODO
-            return 0;
+            return 5000;
         } break;
         case BOX_SHAPE: {
             float w = shape->as.box.width;

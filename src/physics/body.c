@@ -148,12 +148,7 @@ void body_update(Body* body, float dt) {
     body_integrate_linear(body, dt);
     body_integrate_angular(body, dt);
 
-    // rotate and translate body vertices from local space to world space
-    bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
-    if (is_polygon) {
-        PolygonShape* polygon_shape = &body->shape.as.polygon;
-        shape_polygon_update_vertices(polygon_shape, body->rotation, body->position);
-    }
+    shape_update_vertices(&body->shape, body->rotation, body->position);
 }
 
 bool body_is_static(Body* body) {

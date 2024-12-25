@@ -1,7 +1,9 @@
 #include "contact.h"
 #include "body.h"
+#include "shape.h"
 #include "vec2.h"
-#include <math.h>
+
+#define DELTA_PERC 0.8
 
 void contact_resolve_penetration(Contact* contact) {
     Body* a = contact->a;
@@ -14,8 +16,11 @@ void contact_resolve_penetration(Contact* contact) {
     float da = contact->depth * a->inv_mass / mass_sum;
     float db = contact->depth * b->inv_mass / mass_sum;
 
-    a->position = vec_add(a->position, vec_mult(contact->normal, -da));
-    b->position = vec_add(b->position, vec_mult(contact->normal, db));
+    a->position = vec_add(a->position, vec_mult(contact->normal, -da * DELTA_PERC));
+    b->position = vec_add(b->position, vec_mult(contact->normal, db * DELTA_PERC));
+
+    shape_update_vertices(&a->shape, a->rotation, a->position);
+    shape_update_vertices(&b->shape, b->rotation, b->position);
 }
 
 void contact_resolve_collision(Contact *contact) {

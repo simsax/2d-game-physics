@@ -1,6 +1,7 @@
 #include "shape.h"
-#include <float.h>
 #include "array.h"
+#include <float.h>
+#include <stdbool.h>
 
 Shape shape_create_circle(float radius) {
     return (Shape) {
@@ -80,12 +81,16 @@ float shape_moment_of_inertia(Shape* shape) {
     return 0;
 }
 
-void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 position) {
+void shape_update_vertices(Shape* shape, float angle, Vec2 position) {
+    bool is_circle = shape->type == CIRCLE_SHAPE;
+    if (is_circle)
+        return;
+    PolygonShape* polygon_shape = &shape->as.polygon;
     // loop over all vertices and transform from local to world space
-    for (int i = 0; i < shape->local_vertices.count; i++) {
+    for (int i = 0; i < polygon_shape->local_vertices.count; i++) {
         // first rotate, then translate
-        shape->world_vertices.items[i] = vec_rotate(shape->local_vertices.items[i], angle);
-        shape->world_vertices.items[i] = vec_add(shape->world_vertices.items[i], position);
+        polygon_shape->world_vertices.items[i] = vec_rotate(polygon_shape->local_vertices.items[i], angle);
+        polygon_shape->world_vertices.items[i] = vec_add(polygon_shape->world_vertices.items[i], position);
     }
 }
 

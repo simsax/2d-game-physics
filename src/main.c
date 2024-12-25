@@ -1,5 +1,4 @@
 #include "application.h"
-#include <stdio.h>
 
 void run() {
     setup();

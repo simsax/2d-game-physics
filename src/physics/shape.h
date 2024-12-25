@@ -39,7 +39,7 @@ Shape shape_create_box(float width, float height);
 float shape_moment_of_inertia(Shape* shape);
 
 // rotate and translate shape vertices from "local space" to "world space"
-void shape_polygon_update_vertices(PolygonShape* shape, float angle, Vec2 position);
+void shape_update_vertices(Shape* shape, float angle, Vec2 position);
 
 // Find edge at a certain vertex index.
 // Ex. triangle with vertices A, B, C

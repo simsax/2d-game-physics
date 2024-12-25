@@ -81,8 +81,8 @@ void setup() {
     static_box->friction = 0.2;
     body_set_texture(static_box, "./assets/crate.png");
 
-    Vec2 wind = VEC2(0.5 * PIXELS_PER_METER, 0);
-    world_add_force(&world, wind);
+    /*Vec2 wind = VEC2(0.5 * PIXELS_PER_METER, 0);*/
+    /*world_add_force(&world, wind);*/
 }
 
 void destroy() {
@@ -129,21 +129,13 @@ void input() {
     mouse_coord.y = GetMouseY();
     
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        left_mouse_down = true;
-    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        right_mouse_down = true;
-    } else if (left_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-        left_mouse_down = false;
-
         //circle
         Body* new_circle = world_new_body(&world);
         *new_circle = body_create_circle(30, mouse_coord.x, mouse_coord.y, 1.0);
         new_circle->restitution = 1.0f;
         new_circle->friction = 1.0f;
         body_set_texture(new_circle, "./assets/basketball.png");
-    } else if (right_mouse_down && IsMouseButtonReleased(MOUSE_BUTTON_RIGHT)) {
-        right_mouse_down = false;
-
+    } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
         // box
         Body* new_box = world_new_body(&world);
         *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 5.0);
@@ -187,7 +179,7 @@ void update() {
     #if SHOW_FPS
         frame_count++;
         if (cur_time - prev_time_fps >= 1.0f) {
-            printf("FPS: %d\n", frame_count);
+            printf("FPS: %d\n | Num objects: %d\n", frame_count, world.bodies.count);
             frame_count = 0;
             prev_time_fps = cur_time;
         }

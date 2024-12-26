@@ -30,8 +30,8 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
     CircleShape* b_shape = &b->shape.as.circle;
 
     int radius_sum = a_shape->radius + b_shape->radius;
-    Vec2 distance = vec_sub(b->position, a->position);
-    bool is_colliding = vec_magnitude_squared(distance) <= radius_sum * radius_sum;
+    Vec2 distance = vec2_sub(b->position, a->position);
+    bool is_colliding = vec2_magnitude_squared(distance) <= radius_sum * radius_sum;
 
     if (!is_colliding)
         return false;
@@ -39,10 +39,10 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
     // compute contact collision information
     contact->a = a;
     contact->b = b;
-    contact->normal = vec_normalize(distance);
-    contact->start = vec_add(b->position, vec_mult(contact->normal, -b_shape->radius));
-    contact->end = vec_add(a->position, vec_mult(contact->normal, a_shape->radius));
-    contact->depth = vec_magnitude(vec_sub(contact->end, contact->start));
+    contact->normal = vec2_normalize(distance);
+    contact->start = vec2_add(b->position, vec2_mult(contact->normal, -b_shape->radius));
+    contact->end = vec2_add(a->position, vec2_mult(contact->normal, a_shape->radius));
+    contact->depth = vec2_magnitude(vec2_sub(contact->end, contact->start));
 
     return true;
 }
@@ -66,11 +66,11 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact) {
         contact->depth = -ab_separation;
         contact->normal = a_normal;
         contact->start = a_point;
-        contact->end = vec_add(a_point, vec_mult(contact->normal, contact->depth));
+        contact->end = vec2_add(a_point, vec2_mult(contact->normal, contact->depth));
     } else {
         contact->depth = -ba_separation;
-        contact->normal = vec_mult(b_normal, -1); // normal always goes from A to B
-        contact->start = vec_add(b_point, vec_mult(contact->normal, -contact->depth));
+        contact->normal = vec2_mult(b_normal, -1); // normal always goes from A to B
+        contact->start = vec2_add(b_point, vec2_mult(contact->normal, -contact->depth));
         contact->end = b_point;
     }
 
@@ -90,9 +90,9 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
     for (int i = 0; i < polygon_vertices.count; i++) {
         Vec2 va = polygon_vertices.items[i];
         Vec2 edge = shape_polygon_edge_at(polygon_shape, i);
-        Vec2 normal = vec_normal(edge);
-        Vec2 va_vc = vec_sub(circle->position, va);
-        float proj = vec_dot(va_vc, normal);
+        Vec2 normal = vec2_normal(edge);
+        Vec2 va_vc = vec2_sub(circle->position, va);
+        float proj = vec2_dot(va_vc, normal);
 
         // if dot product is in the positive side of the normal, the circle center is outside the polygon
         if (proj > 0 && proj > distance_circle_edge) {
@@ -116,38 +116,38 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
     float circle_radius = circle->shape.as.circle.radius;
     if (!inside) {
         // check if circle center is in region A
-        Vec2 ac = vec_sub(circle->position, min_cur_vertex);
-        Vec2 perp_normal = vec_normal(min_normal);
+        Vec2 ac = vec2_sub(circle->position, min_cur_vertex);
+        Vec2 perp_normal = vec2_normal(min_normal);
 
-        if (vec_dot(ac, perp_normal) > 0) {
+        if (vec2_dot(ac, perp_normal) > 0) {
             Vec2 contact_direction = ac;
-            float mag = vec_magnitude(contact_direction);
+            float mag = vec2_magnitude(contact_direction);
             if (mag > circle_radius) {
                 // no collision
                 return false;
             }
             contact->a = polygon;
             contact->b = circle;
-            contact->normal = vec_normalize(contact_direction);
-            contact->start = vec_add(circle->position, vec_mult(contact->normal, -circle_radius));
+            contact->normal = vec2_normalize(contact_direction);
+            contact->start = vec2_add(circle->position, vec2_mult(contact->normal, -circle_radius));
             contact->end = min_cur_vertex;
             contact->depth = circle_radius - mag;
         } else {
-            Vec2 bc = vec_sub(circle->position, min_next_vertex);
-            perp_normal = vec_mult(perp_normal, -1);
+            Vec2 bc = vec2_sub(circle->position, min_next_vertex);
+            perp_normal = vec2_mult(perp_normal, -1);
 
             // check if circle in region B
-            if (vec_dot(bc, perp_normal) > 0) {
+            if (vec2_dot(bc, perp_normal) > 0) {
                 Vec2 contact_direction = bc;
-                float mag = vec_magnitude(contact_direction);
+                float mag = vec2_magnitude(contact_direction);
                 if (mag > circle_radius) {
                     // no collision
                     return false;
                 }
                 contact->a = polygon;
                 contact->b = circle;
-                contact->normal = vec_normalize(contact_direction);
-                contact->start = vec_add(circle->position, vec_mult(contact->normal, -circle_radius));
+                contact->normal = vec2_normalize(contact_direction);
+                contact->start = vec2_add(circle->position, vec2_mult(contact->normal, -circle_radius));
                 contact->end = min_next_vertex;
                 contact->depth = circle_radius - mag;
             } else {
@@ -158,9 +158,9 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
                 contact->a = polygon;
                 contact->b = circle;
                 contact->normal = min_normal;
-                contact->start = vec_add(circle->position, vec_mult(contact->normal, -circle_radius));
+                contact->start = vec2_add(circle->position, vec2_mult(contact->normal, -circle_radius));
                 contact->depth = circle_radius - distance_circle_edge;
-                contact->end = vec_add(contact->start, vec_mult(contact->normal, contact->depth));
+                contact->end = vec2_add(contact->start, vec2_mult(contact->normal, contact->depth));
             }
         }
     } else {
@@ -168,9 +168,9 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
         contact->a = polygon;
         contact->b = circle;
         contact->normal = min_normal;
-        contact->start = vec_add(circle->position, vec_mult(contact->normal, -circle_radius));
+        contact->start = vec2_add(circle->position, vec2_mult(contact->normal, -circle_radius));
         contact->depth = circle_radius - distance_circle_edge;
-        contact->end = vec_add(contact->start, vec_mult(contact->normal, contact->depth));
+        contact->end = vec2_add(contact->start, vec2_mult(contact->normal, contact->depth));
     }
 
     return true;

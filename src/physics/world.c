@@ -65,8 +65,7 @@ void world_update(World* world, float dt) {
     }
 
     // apply collision detection and resolution for all bodies in the world
-    for (int n = 0; n < 10; n++)
-        world_check_collisions(world);
+    world_check_collisions(world);
 }
 
 void world_check_collisions(World* world) {

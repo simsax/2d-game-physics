@@ -89,14 +89,14 @@ void shape_update_vertices(Shape* shape, float angle, Vec2 position) {
     // loop over all vertices and transform from local to world space
     for (int i = 0; i < polygon_shape->local_vertices.count; i++) {
         // first rotate, then translate
-        polygon_shape->world_vertices.items[i] = vec_rotate(polygon_shape->local_vertices.items[i], angle);
-        polygon_shape->world_vertices.items[i] = vec_add(polygon_shape->world_vertices.items[i], position);
+        polygon_shape->world_vertices.items[i] = vec2_rotate(polygon_shape->local_vertices.items[i], angle);
+        polygon_shape->world_vertices.items[i] = vec2_add(polygon_shape->world_vertices.items[i], position);
     }
 }
 
 Vec2 shape_polygon_edge_at(PolygonShape* shape, int index) {
     int num_vertices = shape->world_vertices.count;
-    return vec_sub(
+    return vec2_sub(
                 shape->world_vertices.items[(index + 1) % num_vertices],
                 shape->world_vertices.items[index]
             );
@@ -108,14 +108,14 @@ float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* 
     for (int i = 0; i < a->world_vertices.count; i++) {
         Vec2 va = a->world_vertices.items[i];
         Vec2 edge = shape_polygon_edge_at(a, i);
-        Vec2 normal = vec_normal(edge);
+        Vec2 normal = vec2_normal(edge);
 
         float min_separation = FLT_MAX;
         Vec2 min_vertex;
         for (int j = 0; j < b->world_vertices.count; j++) {
             Vec2 vb = b->world_vertices.items[j];
-            Vec2 va_vb = vec_sub(vb, va); // vector from va to vb
-            float proj = vec_dot(va_vb, normal);
+            Vec2 va_vb = vec2_sub(vb, va); // vector from va to vb
+            float proj = vec2_dot(va_vb, normal);
             if (proj < min_separation) {
                 min_separation = proj;
                 min_vertex = vb;

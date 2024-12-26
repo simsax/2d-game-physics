@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 
 typedef struct {
     uint32_t capacity;
@@ -27,6 +28,10 @@ typedef struct {
             else                                                                            \
                 (xs)->capacity *= 2;                                                        \
             (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));      \
+            if ((xs)->items == NULL) {                                                      \
+                printf("ERROR: Mem allocation failed, quitting.\n");                        \
+                exit(1);                                                                    \
+            }                                                                               \
         }                                                                                   \
         (xs)->items[(xs)->count++] = (x);                                                   \
     } while (0)                                                                             
@@ -34,7 +39,9 @@ typedef struct {
 #define DA_NEXT_PTR(xs)                                                                 \
     (((xs)->count >= (xs)->capacity) ?                                                  \
      ((xs)->capacity = ((xs)->capacity == 0 ? START_CAPACITY : (xs)->capacity * 2),     \
-      (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items))) :      \
+      (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items)),        \
+      ((xs)->items == NULL ? exit(69) : NULL)                                           \
+      ) :                                                                               \
       NULL,                                                                             \
       &((xs)->items[(xs)->count++]))
 

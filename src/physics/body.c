@@ -105,13 +105,13 @@ void body_integrate_linear(Body* body, float dt) {
         return;
 
     // find acceleration based on the forces being applied and the mass
-    body->acceleration = vec_mult(body->sum_forces, body->inv_mass);
+    body->acceleration = vec2_mult(body->sum_forces, body->inv_mass);
 
     // integrate acceleration to find new velocity
-    body->velocity = vec_add(body->velocity, vec_scale(body->acceleration, dt));
+    body->velocity = vec2_add(body->velocity, vec2_scale(body->acceleration, dt));
 
     // integrate velocity to find new position
-    body->position = vec_add(body->position, vec_scale(body->velocity, dt));
+    body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));
 
     body_clear_forces(body);
 }
@@ -128,7 +128,7 @@ void body_integrate_angular(Body* body, float dt) {
 
 
 void body_add_force(Body* body, Vec2 force) {
-    body->sum_forces = vec_add(body->sum_forces, force);
+    body->sum_forces = vec2_add(body->sum_forces, force);
 }
 
 void body_add_torque(Body* body, float torque) {
@@ -160,22 +160,22 @@ void body_apply_impulse(Body* body, Vec2 jn, Vec2 r) {
     if (body_is_static(body))
         return;
 
-    body->velocity = vec_add(body->velocity, vec_mult(jn, body->inv_mass));
-    body->angular_velocity += vec_cross(r, jn) * body->inv_I;
+    body->velocity = vec2_add(body->velocity, vec2_mult(jn, body->inv_mass));
+    body->angular_velocity += vec2_cross(r, jn) * body->inv_I;
 }
 
 void body_apply_impulse_linear(Body* body, Vec2 jn) {
     if (body_is_static(body))
         return;
 
-    body->velocity = vec_add(body->velocity, vec_mult(jn, body->inv_mass));
+    body->velocity = vec2_add(body->velocity, vec2_mult(jn, body->inv_mass));
 }
 
 void body_apply_impulse_angular(Body *body, Vec2 jn, Vec2 r) {
     if (body_is_static(body))
         return;
 
-    body->angular_velocity += vec_cross(r, jn) * body->inv_I;;
+    body->angular_velocity += vec2_cross(r, jn) * body->inv_I;;
 }
 
 void body_set_texture(Body* body, const char* file_path) {

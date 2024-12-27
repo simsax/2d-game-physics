@@ -40,7 +40,8 @@ MatMN matMN_transpose(MatMN mat) {
 
 VecN matMN_mult_vec(MatMN mat, VecN vec) {
     if (mat.N != vec.N) {
-        printf("ERROR: cannot multiply these two matrices.\n");
+        printf("ERROR: cannot multiply matrix of dimensions (%d, %d) with vector of dimensions (%d, 1).\n",
+                mat.M, mat.N, vec.N);
         exit(1);
     }
     VecN result = vecN_create(mat.M);
@@ -57,7 +58,8 @@ VecN matMN_mult_vec(MatMN mat, VecN vec) {
 
 MatMN matMN_mult_mat(MatMN a, MatMN b) {
     if (a.N != b.M) {
-        printf("ERROR: cannot multiply these two matrices.\n");
+        printf("ERROR: cannot multiply matrix of dimensions (%d, %d) with matrix of dimensions (%d, %d).\n",
+                a.M, a.N, b.M, b.N);
         exit(1);
     }
     MatMN result = matMN_create(a.M, b.N);

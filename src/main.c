@@ -56,39 +56,51 @@ void matrix_tests() {
     float d = vecN_dot(v, v2);
     printf("Dot is: %f\n", d);
 
+    float values_a[] = {
+        4, 5, 7, 3, 0, 1, 8,
+        6, 5, 3, 7, 1, 7, 8,
+        4, 0, 6, 8, 6, 0, 4,
+        4, 6, 5, 0, 0, 5, 9,
+        0, 9, 8, 0, 1, 9, 3
+    };
+
+    float values_b[] = {
+        2, 8, 4, 0,
+        9, 3, 2, 0,
+        8, 9, 1, 3,
+        0, 6, 0, 7,
+        4, 7, 4, 3,
+        3, 1, 8, 1,
+        8, 8, 5, 3
+    };
 
     // matrix tests
     printf("\n---------------------\n");
-    MatMN m = matMN_create(3, 4);
-    mat_print(m);
-    matMN_zero(m);
-    mat_print(m);
-
-    for (int i = 0; i < m.M; i++) {
-        for (int j = 0; j < m.N; j++) {
-            MAT_SET(m, i, j, i + j);
+    MatMN a = matMN_create(5, 7);
+    int k = 0;
+    for (int i = 0; i < a.M; i++) {
+        for (int j = 0; j < a.N; j++) {
+            MAT_SET(a, i, j, values_a[k++]);
         }
     }
-    mat_print(m);
-    MatMN t = matMN_transpose(m);
-    mat_print(t);
+    mat_print(a);
 
-    VecN v3 = vecN_create(4);
-    for (int i = 0; i < v3.N; i++)   
-        v3.data[i] = i * 2 + 1;
-    vec_print(v3);
-    VecN res = matMN_mult_vec(m, v3);
-    vec_print(res);
+    MatMN b = matMN_create(7, 4);
+    k = 0;
+    for (int i = 0; i < b.M; i++) {
+        for (int j = 0; j < b.N; j++) {
+            MAT_SET(b, i, j, values_b[k++]);
+        }
+    }
+    mat_print(b);
 
-    MatMN resm = matMN_mult_mat(m, t);
+    MatMN resm = matMN_mult_mat(a, b);
     mat_print(resm);
 
     vecN_free(v);
     vecN_free(v2);
-    vecN_free(v3);
-    vecN_free(res);
-    matMN_free(m);
-    matMN_free(t);
+    matMN_free(a);
+    matMN_free(b);
     matMN_free(resm);
 }
 

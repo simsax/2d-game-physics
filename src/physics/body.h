@@ -64,5 +64,7 @@ void body_apply_impulse(Body* body, Vec2 jn, Vec2 r);
 void body_apply_impulse_linear(Body* body, Vec2 jn);
 void body_apply_impulse_angular(Body* body, Vec2 jn, Vec2 r);
 void body_set_texture(Body* body, const char* file_path);
+Vec2 body_local_to_world_space(Body* body, Vec2 point);
+Vec2 body_world_to_local_space(Body* body, Vec2 point);
 
 #endif //  BODY_H

@@ -186,3 +186,15 @@ void body_set_texture(Body* body, const char* file_path) {
     }
 }
 
+Vec2 body_local_to_world_space(Body* body, Vec2 point) {
+    Vec2 rotated_point = vec2_rotate(point, body->rotation);
+    Vec2 translated_point = vec2_add(rotated_point, body->position);
+    return translated_point;
+}
+
+Vec2 body_world_to_local_space(Body* body, Vec2 point) {
+    Vec2 translated_point = vec2_sub(point, body->position);
+    Vec2 rotated_point = vec2_rotate(translated_point, -body->rotation);
+    return rotated_point;
+}
+

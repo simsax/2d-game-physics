@@ -179,7 +179,7 @@ void update() {
     #if SHOW_FPS
         frame_count++;
         if (cur_time - prev_time_fps >= 1.0f) {
-            printf("FPS: %d\n | Num objects: %d\n", frame_count, world.bodies.count);
+            printf("FPS: %d | Num objects: %d\n", frame_count, world.bodies.count);
             frame_count = 0;
             prev_time_fps = cur_time;
         }

@@ -22,13 +22,21 @@ void world_free(World* world) {
             UnloadTexture(body->texture);
         }
     }
+    for (int i = 0; i < world->constraints.count; i++) {
+        constraint_free(&world->constraints.items[i]);
+    }
     DA_FREE(&world->bodies);
+    DA_FREE(&world->constraints);
     DA_FREE(&world->forces);
     DA_FREE(&world->torques);
 }
 
 Body* world_new_body(World* world) {
     return DA_NEXT_PTR(&world->bodies);
+}
+
+Constraint* world_new_constraint(World* world) {
+    return DA_NEXT_PTR(&world->constraints);
 }
 
 void world_add_force(World* world, Vec2 force) {
@@ -57,8 +65,20 @@ void world_update(World* world, float dt) {
             body_add_torque(body, world->torques.items[t]);
         }
 
-        // integrate forces to find new position and rotation
-        body_update(body, dt);
+        // integrate all the forces
+        for (int b = 0; b < world->bodies.count; b++) {
+            body_integrate_forces(body, dt);
+        }
+
+        // solve all constraints
+        for (int c = 0; c < world->constraints.count; c++) {
+            constraint_solve(&world->constraints.items[c]);
+        }
+
+        // integrate all velocities
+        for (int b = 0; b < world->bodies.count; b++) {
+            body_integrate_velocities(body, dt);
+        }
 
         // reset debug information
         body->is_colliding = false;

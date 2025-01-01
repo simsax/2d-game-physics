@@ -100,33 +100,6 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     body->friction = 0.7f;
 }
 
-void body_integrate_linear(Body* body, float dt) {
-    if (body_is_static(body))
-        return;
-
-    // find acceleration based on the forces being applied and the mass
-    body->acceleration = vec2_mult(body->sum_forces, body->inv_mass);
-
-    // integrate acceleration to find new velocity
-    body->velocity = vec2_add(body->velocity, vec2_scale(body->acceleration, dt));
-
-    // integrate velocity to find new position
-    body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));
-
-    body_clear_forces(body);
-}
-
-void body_integrate_angular(Body* body, float dt) {
-    if (body_is_static(body))
-        return;
-
-    body->angular_acceleration = body->sum_torque * body->inv_I;
-    body->angular_velocity += body->angular_acceleration * dt;
-    body->rotation += body->angular_velocity * dt;
-    body_clear_torque(body);
-}
-
-
 void body_add_force(Body* body, Vec2 force) {
     body->sum_forces = vec2_add(body->sum_forces, force);
 }
@@ -143,11 +116,28 @@ void body_clear_torque(Body* body) {
     body->sum_torque = 0;
 }
 
-void body_update(Body* body, float dt) {
-    // integrate forces to find new position and rotation
-    body_integrate_linear(body, dt);
-    body_integrate_angular(body, dt);
+void body_integrate_forces(Body* body, float dt) {
+    if (body_is_static(body))
+        return;
 
+    // linear
+    body->acceleration = vec2_mult(body->sum_forces, body->inv_mass);
+    body->velocity = vec2_add(body->velocity, vec2_scale(body->acceleration, dt));
+
+    // angular
+    body->angular_acceleration = body->sum_torque * body->inv_I;
+    body->angular_velocity += body->angular_acceleration * dt;
+
+    body_clear_forces(body);
+    body_clear_torque(body);
+}
+
+void body_integrate_velocities(Body* body, float dt) {
+    // integrate velocities to find new position and rotation
+    body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));
+    body->rotation += body->angular_velocity * dt;
+
+    // update the vertices according to new position and rotation
     shape_update_vertices(&body->shape, body->rotation, body->position);
 }
 

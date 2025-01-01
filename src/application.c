@@ -59,30 +59,11 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    Body* floor = world_new_body(&world);
-    *floor = body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
-    floor->restitution = 0.8;
-    floor->friction = 0.2;
-
-    Body* left_wall = world_new_body(&world);
-    *left_wall = body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0);
-    left_wall->restitution = 0.2;
-    left_wall->friction = 0.2;
-
-    Body* right_wall = world_new_body(&world); 
-    *right_wall = body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0);
-    right_wall->restitution = 0.2;
-    right_wall->friction = 0.2;
-
-    Body* static_box = world_new_body(&world);
-    *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
-    static_box->rotation = 1.4;
-    static_box->restitution = 0.5;
-    static_box->friction = 0.2;
-    body_set_texture(static_box, "./assets/crate.png");
-
-    /*Vec2 wind = VEC2(0.5 * PIXELS_PER_METER, 0);*/
-    /*world_add_force(&world, wind);*/
+    // add two bodies
+    Body* a = world_new_body(&world);
+    Body* b = world_new_body(&world);
+    *a = body_create_circle(30, x_center, y_center, 0.0f);
+    *b = body_create_circle(20, a->position.x - 100, a->position.y, 1.0f);
 }
 
 void destroy() {

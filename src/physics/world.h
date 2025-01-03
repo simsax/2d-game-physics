@@ -5,7 +5,7 @@
 #include "array.h"
 #include "constraint.h"
 
-typedef struct {
+typedef struct World {
     float gravity;
     BodyArray bodies;
     ConstraintArray constraints;

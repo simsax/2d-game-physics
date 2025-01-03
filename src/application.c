@@ -3,6 +3,7 @@
 #include "application.h"
 #include "graphics.h"
 #include "physics/array.h"
+#include "physics/constraint.h"
 #include "physics/force.h"
 #include "physics/body.h"
 #include "physics/shape.h"
@@ -59,11 +60,20 @@ void setup() {
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     
-    // add two bodies
-    Body* a = world_new_body(&world);
-    Body* b = world_new_body(&world);
-    *a = body_create_circle(30, x_center, y_center, 0.0f);
-    *b = body_create_circle(20, a->position.x - 100, a->position.y, 1.0f);
+    int num_bodies = 8;
+    for (int i = 0; i < num_bodies; i++) {
+        float mass = (i == 0) ? 0.0f : 1.0f;
+        Body* body = world_new_body(&world);
+        *body = body_create_box(30, 30, x_center - i * 40.0f, 100, mass);
+        body_set_texture(body, "./assets/crate.png");
+    }
+
+    for (int i = 0; i < num_bodies - 1; i++) {
+        Body* a = &world.bodies.items[i];
+        Body* b = &world.bodies.items[i + 1];
+        Constraint* c = world_new_constraint(&world);
+        *c = constraint_create(JOINT_CONSTRAINT, &world, i, i + 1, a->position);
+    }
 }
 
 void destroy() {
@@ -174,6 +184,18 @@ void update() {
 /*}*/
 
 void render() {
+    // joints
+    for (int i = 0; i < world.constraints.count; i++) {
+        Constraint* constraint = &world.constraints.items[i];
+        Body* a = &world.bodies.items[constraint->a_index];
+        Body* b = &world.bodies.items[constraint->b_index];
+        if (constraint->type == JOINT_CONSTRAINT) {
+            Vec2 pa = body_local_to_world_space(a, constraint->a_point);
+            Vec2 pb = body_local_to_world_space(b, constraint->a_point);
+            draw_line(pa.x, pa.y, pb.x, pb.y, 0xFFFFFFFF);
+        }
+    }
+
     // bodies
     for (int i = 0; i < world.bodies.count; i++) {
         Body* body = &world.bodies.items[i];

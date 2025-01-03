@@ -58,6 +58,6 @@ void contact_resolve_collision(Contact *contact) {
 
     Vec2 j = vec2_add(jn, jt);
 
-    body_apply_impulse(a, j, ra);
-    body_apply_impulse(b, vec2_mult(j, -1), rb);
+    body_apply_impulse_at_point(a, j, ra);
+    body_apply_impulse_at_point(b, vec2_mult(j, -1), rb);
 }

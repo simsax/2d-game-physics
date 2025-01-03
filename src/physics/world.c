@@ -48,6 +48,7 @@ void world_add_torque(World* world, float torque) {
 }
 
 void world_update(World* world, float dt) {
+    // apply all the forces
     for (int i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
 
@@ -64,21 +65,31 @@ void world_update(World* world, float dt) {
         for (int t = 0;  t < world->torques.count; t++) {
             body_add_torque(body, world->torques.items[t]);
         }
+    }
 
-        // integrate all the forces
-        for (int b = 0; b < world->bodies.count; b++) {
-            body_integrate_forces(body, dt);
-        }
+    // integrate all the forces
+    for (int i = 0; i < world->bodies.count; i++) {
+        Body* body = &world->bodies.items[i];
+        body_integrate_forces(body, dt);
+    }
 
-        // solve all constraints
+    // solve all constraints
+    for (int c = 0; c < world->constraints.count; c++) {
+        constraint_pre_solve(&world->constraints.items[c], dt);
+    }
+    for (int i = 0; i < 5; i++) {
         for (int c = 0; c < world->constraints.count; c++) {
             constraint_solve(&world->constraints.items[c]);
         }
+    }
+    /*for (int c = 0; c < world->constraints.count; c++) {*/
+    /*    constraint_post_solve(&world->constraints.items[c]);*/
+    /*}*/
 
-        // integrate all velocities
-        for (int b = 0; b < world->bodies.count; b++) {
-            body_integrate_velocities(body, dt);
-        }
+    // integrate all velocities
+    for (int i = 0; i < world->bodies.count; i++) {
+        Body* body = &world->bodies.items[i];
+        body_integrate_velocities(body, dt);
 
         // reset debug information
         body->is_colliding = false;

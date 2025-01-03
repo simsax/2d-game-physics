@@ -18,5 +18,7 @@ void matMN_zero(MatMN mat);
 MatMN matMN_transpose(MatMN mat);
 VecN matMN_mult_vec(MatMN mat, VecN vec);
 MatMN matMN_mult_mat(MatMN a, MatMN b);
+VecN matMN_solve_gauss_seidel(MatMN a, VecN b);
+void matMN_print(MatMN m);
 
 #endif // MATMN_H

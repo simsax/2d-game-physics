@@ -1,4 +1,5 @@
 #include "matMN.h"
+#include "vecN.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,7 +25,7 @@ void matMN_free(MatMN mat) {
 }
 
 void matMN_zero(MatMN mat) {
-    memset(mat.data, 0, mat.M * mat.N);
+    memset(mat.data, 0, mat.M * mat.N * sizeof(float));
 }
 
 MatMN matMN_transpose(MatMN mat) {
@@ -76,3 +77,36 @@ MatMN matMN_mult_mat(MatMN a, MatMN b) {
     return result;
 }
 
+VecN matMN_solve_gauss_seidel(MatMN a, VecN b) {
+    int N = b.N;
+    VecN X = vecN_create(N);
+    vecN_zero(X);
+
+    for (int iterations = 0; iterations < N; iterations++) {
+        for (int i = 0; i < N; i++) {
+            float a_ii = MAT_GET(a, i, i);
+            float ai_dot_x = 0.0f;
+            for (int j = 0; j < a.N; j++) {
+                ai_dot_x += MAT_GET(a, i, j) * X.data[j];
+            }
+            if (a_ii != 0.0f) {
+                X.data[i] += (b.data[i] / a_ii) - (ai_dot_x / a_ii);
+            }
+        }
+    }
+
+    return X;
+}
+
+void matMN_print(MatMN m) {
+    printf("[\n");
+    for (int i = 0; i < m.M; i++) {
+        printf("    ");
+        for (int j = 0; j < m.N; j++) {
+            float val = MAT_GET(m, i, j);
+            printf("%.2f ", val);
+        }
+        printf("\n");
+    }
+    printf("]\n");
+}

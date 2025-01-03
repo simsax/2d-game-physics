@@ -5,7 +5,7 @@
 #include <string.h>
 
 VecN vecN_create(int length) {
-    float* data = malloc(sizeof(float) * length);
+    float* data = malloc(length * sizeof(float));
     if (data == NULL) {
         printf("ERROR: Mem allocation failed, quitting.\n");
         exit(1);
@@ -21,22 +21,28 @@ void vecN_free(VecN vec) {
 }
 
 void vecN_zero(VecN vec) {
-    memset(vec.data, 0, vec.N);
+    memset(vec.data, 0, vec.N * sizeof(float));
 }
 
-void vecN_sub(VecN this_, VecN other) {
-    for (int i = 0; i < this_.N; i++)
-        this_.data[i] -= other.data[i];
+VecN vecN_sub(VecN a, VecN b) {
+    VecN res = vecN_create(a.N);
+    for (int i = 0; i < a.N; i++)
+        res.data[i] = a.data[i] - b.data[i];
+    return res;
 }
 
-void vecN_add(VecN this_, VecN other) {
-    for (int i = 0; i < this_.N; i++)
-        this_.data[i] += other.data[i];
+VecN vecN_add(VecN a, VecN b) {
+    VecN res = vecN_create(a.N);
+    for (int i = 0; i < a.N; i++)
+        res.data[i] = a.data[i] + b.data[i];
+    return res;
 }
 
-void vecN_mult(VecN this_, float f) {
-    for (int i = 0; i < this_.N; i++)
-        this_.data[i] *= f;
+VecN vecN_mult(VecN a, float f) {
+    VecN res = vecN_create(a.N);
+    for (int i = 0; i < a.N; i++)
+        res.data[i] = a.data[i] * f;
+    return res;
 }
 
 float vecN_dot(VecN a, VecN b) {

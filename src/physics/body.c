@@ -22,10 +22,12 @@ Body body_create_circle(float radius, int x, int y, float mass) {
 
 Body body_create_polygon(Vec2Array vertices, int x, int y, float mass) {
     Shape shape = shape_create_polygon(vertices);
+    Vec2 position = VEC2(x, y);
+    shape_update_vertices(&shape, 0, position);
     float I = shape_moment_of_inertia(&shape) * mass;
     return (Body) {
         .shape = shape,
-        .position = VEC2(x, y),
+        .position = position,
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .inv_I = I != 0 ? 1.0 / I : 0,
         .restitution = 1.0f,
@@ -35,10 +37,12 @@ Body body_create_polygon(Vec2Array vertices, int x, int y, float mass) {
 
 Body body_create_box(float width, float height, int x, int y, float mass) {
     Shape shape = shape_create_box(width, height);
+    Vec2 position = VEC2(x, y);
+    shape_update_vertices(&shape, 0, position);
     float I = shape_moment_of_inertia(&shape) * mass;
     return (Body) {
         .shape = shape,
-        .position = VEC2(x, y),
+        .position = position,
         .inv_mass = mass != 0 ? 1.0 / mass : 0,
         .inv_I = I != 0 ? 1.0 / I : 0,
         .restitution = 1.0f,
@@ -66,9 +70,11 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
 
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass) {
     Shape shape = shape_create_polygon(vertices);
+    Vec2 position = VEC2(x, y);
+    shape_update_vertices(&shape, 0, position);
     float I = shape_moment_of_inertia(&shape) * mass;
     body->shape = shape;
-    body->position = (Vec2) { .x = x, .y = y };
+    body->position = position;
     body->inv_mass = mass != 0 ? 1.0 / mass : 0;
     body->inv_I = I != 0 ? 1.0 / I : 0;
     body->velocity = VEC2(0, 0);
@@ -84,9 +90,11 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
 
 void body_init_box(Body* body, float width, float height, int x, int y, float mass) {
     Shape shape = shape_create_box(width, height);
+    Vec2 position = VEC2(x, y);
+    shape_update_vertices(&shape, 0, position);
     float I = shape_moment_of_inertia(&shape) * mass;
     body->shape = shape;
-    body->position = (Vec2) { .x = x, .y = y };
+    body->position = position;
     body->inv_mass = mass != 0 ? 1.0 / mass : 0;
     body->inv_I = I != 0 ? 1.0 / I : 0;
     body->velocity = VEC2(0, 0);
@@ -133,6 +141,9 @@ void body_integrate_forces(Body* body, float dt) {
 }
 
 void body_integrate_velocities(Body* body, float dt) {
+    if (body_is_static(body))
+        return;
+
     // integrate velocities to find new position and rotation
     body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));
     body->rotation += body->angular_velocity * dt;
@@ -146,10 +157,9 @@ bool body_is_static(Body* body) {
     return fabs(body->inv_mass - 0.0f) < epsilon;
 }
 
-void body_apply_impulse(Body* body, Vec2 jn, Vec2 r) {
+void body_apply_impulse_at_point(Body* body, Vec2 jn, Vec2 r) {
     if (body_is_static(body))
         return;
-
     body->velocity = vec2_add(body->velocity, vec2_mult(jn, body->inv_mass));
     body->angular_velocity += vec2_cross(r, jn) * body->inv_I;
 }
@@ -157,15 +167,13 @@ void body_apply_impulse(Body* body, Vec2 jn, Vec2 r) {
 void body_apply_impulse_linear(Body* body, Vec2 jn) {
     if (body_is_static(body))
         return;
-
     body->velocity = vec2_add(body->velocity, vec2_mult(jn, body->inv_mass));
 }
 
-void body_apply_impulse_angular(Body *body, Vec2 jn, Vec2 r) {
+void body_apply_impulse_angular(Body *body, float j) {
     if (body_is_static(body))
         return;
-
-    body->angular_velocity += vec2_cross(r, jn) * body->inv_I;;
+    body->angular_velocity += j * body->inv_I;;
 }
 
 void body_set_texture(Body* body, const char* file_path) {

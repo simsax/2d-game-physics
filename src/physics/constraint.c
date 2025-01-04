@@ -109,7 +109,7 @@ void constraint_pre_solve(Constraint* constraint, float dt) {
     matMN_free(jacobian_t);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.1f;
+    float beta = 0.4f;
     float C = vec2_dot(pb_pa, pb_pa); // positional error
     C = fmax(C, 0);
     constraint->bias = (beta / dt) * C;

@@ -17,7 +17,7 @@ typedef struct {
     // in the array (not their pointers). Use indices instead
     /*Body* a;*/
     /*Body* b;*/
-    World* world;
+    World* world; // TODO: remove world from here?
     int a_index; // index of body A in the world's bodies array
     int b_index; // index of body B in the world's bodies array
     Vec2 a_point; // anchor point in A's local space

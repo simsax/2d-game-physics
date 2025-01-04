@@ -4,15 +4,9 @@
 #include "body.h"
 #include "matMN.h"
 
-typedef enum {
-    JOINT_CONSTRAINT,
-    PENETRATION_CONSTRAINT
-} ConstraintType;
-
 typedef struct World World;
 
 typedef struct {
-    ConstraintType type;
     // NOTE: after realloc these body pointers are invalidated since the bodies are allocated directly 
     // in the array (not their pointers). Use indices instead
     /*Body* a;*/
@@ -25,20 +19,47 @@ typedef struct {
     MatMN jacobian;
     VecN cached_lambda;
     float bias;
-} Constraint;
+} JointConstraint;
+
+typedef struct {
+    // can store body pointers directly because pentration constraints are resolved in one frame
+    Body* a;
+    Body* b;
+    Vec2 a_collision_point; // collision point of A in world's space
+    Vec2 b_collision_point; // collision point of B in world's space
+    MatMN jacobian;
+    VecN cached_lambda;
+    float bias;
+    Vec2 normal;
+    float friction; // friction coefficient between the two penetrating bodies
+} PenetrationConstraint;
 
 typedef struct {
     uint32_t capacity;
     uint32_t count;
-    Constraint* items;
-} ConstraintArray;
+    JointConstraint* items;
+} JointConstraintArray;
 
-Constraint constraint_create(ConstraintType type, World* world, int index_a, int index_b, Vec2 anchor_point);
-void constraint_free(Constraint* constraint);
-MatMN constraint_get_inv_mass(Constraint* constraint);
-VecN constraint_get_velocities(Constraint* constraint);
-void constraint_solve(Constraint* constraint);
-void constraint_pre_solve(Constraint* constraint, float dt);
-void constraint_post_solve(Constraint* constraint);
+typedef struct {
+    uint32_t capacity;
+    uint32_t count;
+    PenetrationConstraint* items;
+} PenetrationConstraintArray;
+
+JointConstraint constraint_joint_create(World* world, int index_a, int index_b, Vec2 anchor_point);
+void constraint_joint_free(JointConstraint* constraint);
+MatMN constraint_joint_get_inv_mass(JointConstraint* constraint);
+VecN constraint_joint_get_velocities(JointConstraint* constraint);
+void constraint_joint_solve(JointConstraint* constraint);
+void constraint_joint_pre_solve(JointConstraint* constraint, float dt);
+void constraint_joint_post_solve(JointConstraint* constraint);
+
+PenetrationConstraint constraint_penetration_create(Body* a, Body* b, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal);
+void constraint_penetration_free(PenetrationConstraint* constraint);
+MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint);
+VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint);
+void constraint_penetration_solve(PenetrationConstraint* constraint);
+void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float dt);
+void constraint_penetration_post_solve(PenetrationConstraint* constraint);
 
 #endif // CONSTRAINT_H

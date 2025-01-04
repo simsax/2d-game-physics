@@ -1,5 +1,6 @@
 #include "world.h"
 #include "array.h"
+#include "constraint.h"
 #include "contact.h"
 #include "collision.h"
 #include "utils.h"
@@ -23,7 +24,7 @@ void world_free(World* world) {
         }
     }
     for (int i = 0; i < world->constraints.count; i++) {
-        constraint_free(&world->constraints.items[i]);
+        constraint_joint_free(&world->constraints.items[i]);
     }
     DA_FREE(&world->bodies);
     DA_FREE(&world->constraints);
@@ -35,7 +36,7 @@ Body* world_new_body(World* world) {
     return DA_NEXT_PTR(&world->bodies);
 }
 
-Constraint* world_new_constraint(World* world) {
+JointConstraint* world_new_constraint(World* world) {
     return DA_NEXT_PTR(&world->constraints);
 }
 
@@ -48,6 +49,7 @@ void world_add_torque(World* world, float torque) {
 }
 
 void world_update(World* world, float dt) {
+    PenetrationConstraintArray penetrations = DA_NULL;
     // apply all the forces
     for (int i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
@@ -73,42 +75,46 @@ void world_update(World* world, float dt) {
         body_integrate_forces(body, dt);
     }
 
-    // solve all constraints
-    for (int c = 0; c < world->constraints.count; c++) {
-        constraint_pre_solve(&world->constraints.items[c], dt);
-    }
-    for (int i = 0; i < 5; i++) {
-        for (int c = 0; c < world->constraints.count; c++) {
-            constraint_solve(&world->constraints.items[c]);
-        }
-    }
-    /*for (int c = 0; c < world->constraints.count; c++) {*/
-    /*    constraint_post_solve(&world->constraints.items[c]);*/
-    /*}*/
-
-    // integrate all velocities
-    for (int i = 0; i < world->bodies.count; i++) {
-        Body* body = &world->bodies.items[i];
-        body_integrate_velocities(body, dt);
-
-        // reset debug information
-        body->is_colliding = false;
-    }
-
-    // apply collision detection and resolution for all bodies in the world
-    world_check_collisions(world);
-}
-
-void world_check_collisions(World* world) {
+    // check collisions
     for (int i = 0; i < world->bodies.count - 1; i++) {
         for (int j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
             Body* b = &world->bodies.items[j];
             Contact contact;
             if (collision_iscolliding(a, b, &contact)) {
-                contact_resolve_collision(&contact);
+                PenetrationConstraint* c = DA_NEXT_PTR(&penetrations);
+                *c = constraint_penetration_create(contact.a, contact.b, contact.start, contact.end, contact.normal);
             }
         }
     }
+
+    // solve all constraints
+    for (int c = 0; c < world->constraints.count; c++) {
+        constraint_joint_pre_solve(&world->constraints.items[c], dt);
+    }
+    for (int c = 0; c < penetrations.count; c++) {
+        constraint_penetration_pre_solve(&penetrations.items[c], dt);
+    }
+    for (int i = 0; i < 5; i++) {
+        for (int c = 0; c < world->constraints.count; c++) {
+            constraint_joint_solve(&world->constraints.items[c]);
+        }
+        for (int c = 0; c < penetrations.count; c++) {
+            constraint_penetration_solve(&penetrations.items[c]);
+        }
+    }
+    for (int c = 0; c < world->constraints.count; c++) {
+        constraint_joint_post_solve(&world->constraints.items[c]);
+    }
+    for (int c = 0; c < penetrations.count; c++) {
+        constraint_penetration_post_solve(&penetrations.items[c]);
+    }
+
+    // integrate all velocities
+    for (int i = 0; i < world->bodies.count; i++) {
+        Body* body = &world->bodies.items[i];
+        body_integrate_velocities(body, dt);
+    }
+    DA_FREE(&penetrations);
 }
 

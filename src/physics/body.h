@@ -32,9 +32,6 @@ typedef struct Body {
     float friction;
 
     // hacks below
-    // temp
-    bool is_colliding;
-
     // TODO: move this into Entity struct
     Texture2D texture;
 } Body;

@@ -89,8 +89,9 @@ VecN matMN_solve_gauss_seidel(MatMN a, VecN b) {
             for (int j = 0; j < a.N; j++) {
                 ai_dot_x += MAT_GET(a, i, j) * X.data[j];
             }
-            if (a_ii != 0.0f) {
-                X.data[i] += (b.data[i] / a_ii) - (ai_dot_x / a_ii);
+            float dx = (b.data[i] / a_ii) - (ai_dot_x / a_ii);
+            if (dx == dx) { // if dx is not NaN
+                X.data[i] += dx;
             }
         }
     }

@@ -47,6 +47,8 @@ void shape_update_vertices(Shape* shape, float angle, Vec2 position);
 // index = 1 -> Edge BC
 // index = 2 -> Edge CA
 Vec2 shape_polygon_edge_at(PolygonShape* shape, int index);
-float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis_normal, Vec2* point);
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, int* index_reference_edge);
+int shape_polygon_find_incident_edge_index(PolygonShape* reference, Vec2 normal);
+int shape_polygon_clip_segment_to_line(Vec2* contacts_in, Vec2* contacts_out, Vec2 c0, Vec2 c1);
 
 #endif // SHAPE_H

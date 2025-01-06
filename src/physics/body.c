@@ -141,8 +141,8 @@ void body_integrate_forces(Body* body, float dt) {
 }
 
 void body_integrate_velocities(Body* body, float dt) {
-    if (body_is_static(body))
-        return;
+    /*if (body_is_static(body))*/
+    /*    return;*/
 
     // integrate velocities to find new position and rotation
     body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));

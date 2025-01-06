@@ -3,29 +3,32 @@
 #include "shape.h"
 #include "vec2.h"
 #include <float.h>
+#include <string.h>
+#include "../graphics.h"
+#include <stdio.h>
 
-bool collision_iscolliding(Body* a, Body* b, Contact* contact) {
+bool collision_iscolliding(Body* a, Body* b, Contact* contacts, int length) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
     bool b_is_circle = b->shape.type == CIRCLE_SHAPE;
     bool a_is_polygon = a->shape.type == POLYGON_SHAPE || a->shape.type == BOX_SHAPE;
     bool b_is_polygon = b->shape.type == POLYGON_SHAPE || b->shape.type == BOX_SHAPE;
 
     if (a_is_circle && b_is_circle) {
-        return collision_iscolliding_circlecircle(a, b, contact);
+        return collision_iscolliding_circlecircle(a, b, contacts, length);
     }
     if (a_is_polygon && b_is_polygon) {
-        return collision_iscolliding_polygonpolygon(a, b, contact);
+        return collision_iscolliding_polygonpolygon(a, b, contacts, length);
     }
     if (a_is_polygon && b_is_circle) {
-        return collision_iscolliding_polygoncircle(a, b, contact);
+        return collision_iscolliding_polygoncircle(a, b, contacts, length);
     }
     if (a_is_circle && b_is_polygon) {
-        return collision_iscolliding_polygoncircle(b, a, contact);
+        return collision_iscolliding_polygoncircle(b, a, contacts, length);
     }
     return false;
 }
 
-bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
+bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contacts, int length) {
     CircleShape* a_shape = &a->shape.as.circle;
     CircleShape* b_shape = &b->shape.as.circle;
 
@@ -35,6 +38,8 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
 
     if (!is_colliding)
         return false;
+
+    Contact* contact = &contacts[0];
 
     // compute contact collision information
     contact->a = a;
@@ -47,37 +52,93 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contact) {
     return true;
 }
 
-bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contact) {
+bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, int length) {
     PolygonShape* a_shape = &a->shape.as.polygon;
     PolygonShape* b_shape = &b->shape.as.polygon;
-    Vec2 a_normal, b_normal;
-    Vec2 a_point, b_point;
-    float ab_separation = shape_polygon_find_min_separation(a_shape, b_shape, &a_normal, &a_point);
+    int a_index_reference_edge, b_index_reference_edge;
+    float ab_separation = shape_polygon_find_min_separation(a_shape, b_shape, &a_index_reference_edge);
     if (ab_separation >= 0)
         return false;
-    float ba_separation = shape_polygon_find_min_separation(b_shape, a_shape, &b_normal, &b_point);
+    float ba_separation = shape_polygon_find_min_separation(b_shape, a_shape, &b_index_reference_edge);
     if (ba_separation >= 0)
         return false;
 
-    contact->a = a;
-    contact->b = b;
+    PolygonShape* reference_shape;
+    PolygonShape* incident_shape;
+    int index_reference_edge;
 
     if (ab_separation > ba_separation) {
-        contact->depth = -ab_separation;
-        contact->normal = a_normal;
-        contact->start = a_point;
-        contact->end = vec2_add(a_point, vec2_mult(contact->normal, contact->depth));
+        reference_shape = a_shape;
+        incident_shape = b_shape;
+        index_reference_edge = a_index_reference_edge;
     } else {
-        contact->depth = -ba_separation;
-        contact->normal = vec2_mult(b_normal, -1); // normal always goes from A to B
-        contact->start = vec2_add(b_point, vec2_mult(contact->normal, -contact->depth));
-        contact->end = b_point;
+        reference_shape = b_shape;
+        incident_shape = a_shape;
+        index_reference_edge = b_index_reference_edge;
+    }
+
+    // find reference edge based on index returned from the function
+    Vec2 reference_edge = shape_polygon_edge_at(reference_shape, index_reference_edge);
+
+    // clipping
+    int incident_index = shape_polygon_find_incident_edge_index(incident_shape, vec2_normal(reference_edge));
+    int incident_next_index = (incident_index + 1) % incident_shape->world_vertices.count;
+    Vec2 v0 = incident_shape->world_vertices.items[incident_index];
+    Vec2 v1 = incident_shape->world_vertices.items[incident_next_index];
+
+    /*// debugging*/
+    /*draw_line_thick(v0.x, v0.y, v1.x, v1.y, 0xFF00FFFF, 4);*/
+    /*int index_next_reference_edge = (index_reference_edge + 1) % reference_shape->world_vertices.count;*/
+    /*Vec2 v2 = reference_shape->world_vertices.items[index_reference_edge];*/
+    /*Vec2 v3 = reference_shape->world_vertices.items[index_next_reference_edge];*/
+    /*draw_line_thick(v2.x, v2.y, v3.x, v3.y, 0x00FF00FF, 4);*/
+    // end debugging
+
+    Vec2 contact_points[2] = { v0, v1 };
+    Vec2 clipped_points[2] = { v0, v1 };
+    // TODO: figure out for loop
+    for (int i = 0; i < reference_shape->world_vertices.count; i++) {
+        if (i == index_reference_edge)
+            continue;
+        Vec2 c0 = reference_shape->world_vertices.items[i];
+        Vec2 c1 = reference_shape->world_vertices.items[(i + 1) % reference_shape->world_vertices.count];
+        int num_clipped = shape_polygon_clip_segment_to_line(contact_points, clipped_points, c0, c1);
+        if (num_clipped < 2)
+            break;
+        // make the next contact points the ones that were just clipped
+        memcpy(contact_points, clipped_points, sizeof(contact_points)); 
+    }
+
+    Vec2 v_ref = reference_shape->world_vertices.items[index_reference_edge];
+    // consider only clipped points whose separation is negative (objects are penetrating)
+    int contact_index = 0;
+    for (int i = 0; i < 2; i++) {
+        Vec2 v_clip = clipped_points[i];
+        Vec2 ref_normal = vec2_normal(reference_edge);
+        float separation = vec2_dot(vec2_sub(v_clip, v_ref), ref_normal);
+        if (separation <= 0) {
+            Contact* contact = &contacts[contact_index++];
+            contact->a = a;
+            contact->b = b;
+            contact->normal = ref_normal;
+            contact->start = v_clip;
+            contact->end = vec2_add(v_clip, vec2_mult(ref_normal, -separation));
+            if (ba_separation >= ab_separation) {
+                // start, end and normal always from A to B
+                // swap start and end
+                Vec2 temp = contact->start;
+                contact->start = contact->end;
+                contact->end = temp;
+                
+                contact->normal = vec2_mult(contact->normal, -1);
+            }
+        }
     }
 
     return true;
 }
 
-bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contact) {
+bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contacts, int length) {
     // compute the nearest edge
     PolygonShape* polygon_shape = &polygon->shape.as.polygon;
     Vec2Array polygon_vertices = polygon_shape->world_vertices;
@@ -112,6 +173,7 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
         }
     }
 
+    Contact* contact = &contacts[0];
     // compute collision information
     float circle_radius = circle->shape.as.circle.radius;
     if (!inside) {

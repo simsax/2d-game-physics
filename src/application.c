@@ -77,9 +77,13 @@ void setup() {
     *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
-    static_box->friction = 0.2;
+    static_box->friction = 0.5;
     shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
     body_set_texture(static_box, "./assets/crate.png");
+
+    /*Body* box = world_new_body(&world);*/
+    /**box = body_create_box(200, 200, x_center, y_center, 1.0);*/
+    /*box->rotation = 0;*/
 }
 
 void destroy() {
@@ -124,6 +128,8 @@ void input() {
     // mouse
     mouse_coord.x = GetMouseX();
     mouse_coord.y = GetMouseY();
+
+    /*world.bodies.items[4].position = mouse_coord;*/
     
     /*if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {*/
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -139,7 +145,7 @@ void input() {
         Body* new_box = world_new_body(&world);
         *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 5.0);
         new_box->restitution = 0.2f;
-        new_box->friction = 0.2f;
+        new_box->friction = 0.5f;
         body_set_texture(new_box, "./assets/crate.png");
 
         // polygon

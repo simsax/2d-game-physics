@@ -28,6 +28,10 @@ void draw_line(int x0, int y0, int x1, int y1, uint32_t color) {
     DrawLine(x0, y0, x1, y1, GetColor(color));
 }
 
+void draw_line_thick(int x0, int y0, int x1, int y1, uint32_t color, int thickness) {
+    DrawLineEx((Vector2){x0, y0}, (Vector2){x1, y1}, thickness, GetColor(color));
+}
+
 void draw_circle(int x, int y, int radius, uint32_t color) {
     Color _color = GetColor(color);
     DrawCircleLines(x, y, radius, _color);

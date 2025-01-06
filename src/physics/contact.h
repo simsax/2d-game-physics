@@ -4,6 +4,8 @@
 #include "vec2.h"
 #include "body.h"
 
+#define NULL_CONTACT (Contact) {.a = NULL, .b = NULL}
+
 typedef struct {
     Body* a;
     Body* b;

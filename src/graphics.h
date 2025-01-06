@@ -16,6 +16,7 @@ void clear_screen(uint32_t color);
 void begin_frame();
 void end_frame();
 void draw_line(int x0, int y0, int x1, int y1, uint32_t color);
+void draw_line_thick(int x0, int y0, int x1, int y1, uint32_t color, int thickness);
 void draw_circle(int x, int y, int radius, uint32_t color);
 void draw_fill_circle(int x, int y, int radius, uint32_t color);
 void draw_circle_line(int x, int y, int radius, float angle, uint32_t color);

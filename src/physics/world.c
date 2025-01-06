@@ -4,6 +4,7 @@
 #include "contact.h"
 #include "collision.h"
 #include "utils.h"
+#include "../graphics.h"
 
 World world_create(float gravity) {
     return (World) {
@@ -80,10 +81,19 @@ void world_update(World* world, float dt) {
         for (int j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
             Body* b = &world->bodies.items[j];
-            Contact contact;
-            if (collision_iscolliding(a, b, &contact)) {
-                PenetrationConstraint* c = DA_NEXT_PTR(&penetrations);
-                *c = constraint_penetration_create(contact.a, contact.b, contact.start, contact.end, contact.normal);
+            Contact contacts[2] = { NULL_CONTACT }; // TODO: figure out if I need more
+            if (collision_iscolliding(a, b, contacts, 2)) {
+                for (int i = 0; i < 2; i++) {
+                    if (contacts[i].a != NULL) {
+                        /*// draw collision points*/
+                        /*draw_fill_circle(contacts[i].start.x, contacts[i].start.y, 5, 0xFF0000FF);*/
+                        /*draw_fill_circle(contacts[i].end.x, contacts[i].end.y, 2, 0xFF0000FF);*/
+                        
+                        // create new penetration constraint
+                        PenetrationConstraint* c = DA_NEXT_PTR(&penetrations);
+                        *c = constraint_penetration_create(contacts[i].a, contacts[i].b, contacts[i].start, contacts[i].end, contacts[i].normal);
+                    }
+                }
             }
         }
     }
@@ -95,7 +105,7 @@ void world_update(World* world, float dt) {
     for (int c = 0; c < penetrations.count; c++) {
         constraint_penetration_pre_solve(&penetrations.items[c], dt);
     }
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 10; i++) {
         for (int c = 0; c < world->constraints.count; c++) {
             constraint_joint_solve(&world->constraints.items[c]);
         }

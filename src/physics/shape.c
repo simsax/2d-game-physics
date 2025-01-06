@@ -102,7 +102,7 @@ Vec2 shape_polygon_edge_at(PolygonShape* shape, int index) {
             );
 }
 
-float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* axis_normal, Vec2* point) {
+float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, int* index_reference_edge) {
     float separation = -FLT_MAX; // -inf
 
     for (int i = 0; i < a->world_vertices.count; i++) {
@@ -111,20 +111,19 @@ float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* 
         Vec2 normal = vec2_normal(edge);
 
         float min_separation = FLT_MAX;
-        Vec2 min_vertex;
+        /*Vec2 min_vertex;*/
         for (int j = 0; j < b->world_vertices.count; j++) {
             Vec2 vb = b->world_vertices.items[j];
             Vec2 va_vb = vec2_sub(vb, va); // vector from va to vb
             float proj = vec2_dot(va_vb, normal);
             if (proj < min_separation) {
                 min_separation = proj;
-                min_vertex = vb;
+                /*min_vertex = vb;*/
             }
         }
         if (min_separation > separation) {
             separation = min_separation;
-            *axis_normal = normal;
-            *point = min_vertex;
+            *index_reference_edge = i;
         }
 
         if (separation > 0) {
@@ -134,5 +133,50 @@ float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, Vec2* 
     }
 
     return separation;
+}
+
+int shape_polygon_find_incident_edge_index(PolygonShape* reference, Vec2 normal) {
+    float min_proj = FLT_MAX;
+    int incident_edge = -1;
+    for (int i = 0; i < reference->world_vertices.count; i++) {
+        Vec2 edge = shape_polygon_edge_at(reference, i);
+        Vec2 edge_normal = vec2_normal(edge);
+
+        float proj = vec2_dot(edge_normal, normal);
+        if (proj < min_proj) {
+            min_proj = proj;
+            incident_edge = i;
+        }
+    }
+    return incident_edge;
+}
+
+int shape_polygon_clip_segment_to_line(Vec2* contacts_in, Vec2* contacts_out, Vec2 c0, Vec2 c1) {
+    int num_out = 0;
+
+    /*Vec2 normal = vec2_normal(vec2_sub(c1, c0));*/
+    /*float dist0 = vec2_dot(vec2_sub(contacts_in[0], c0), normal);*/
+    /*float dist1 = vec2_dot(vec2_sub(contacts_in[1], c0), normal);*/
+
+    Vec2 normal = vec2_normalize(vec2_sub(c1, c0));
+    float dist0 = vec2_cross(vec2_sub(contacts_in[0], c0), normal);
+    float dist1 = vec2_cross(vec2_sub(contacts_in[1], c0), normal);
+
+    // if points are behind the plane
+    if (dist0 <= 0)
+        contacts_out[num_out++] = contacts_in[0];
+    if (dist1 <= 0)
+        contacts_out[num_out++] = contacts_in[1];
+
+    // if points are on different sides of the plane, clip to plane intersection
+    if (dist0 * dist1 < 0) {
+        float total_dist = dist0 - dist1;
+
+        // find intersection with linear interpolation: lerp(a, b, t) => a + t * (b - a)
+        float t = dist0 / total_dist;
+        Vec2 contact = vec2_add(contacts_in[0], vec2_mult(vec2_sub(contacts_in[1], contacts_in[0]), t));
+        contacts_out[num_out++] = contact;
+    }
+    return num_out;
 }
 

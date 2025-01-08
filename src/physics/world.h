@@ -4,11 +4,13 @@
 #include "body.h"
 #include "array.h"
 #include "constraint.h"
+#include "manifold.h"
 
 typedef struct World {
     float gravity;
     BodyArray bodies;
-    JointConstraintArray constraints;
+    JointConstraintArray joint_constraints;
+    ManifoldArray manifolds;
     Vec2Array forces;
     FloatArray torques;
 } World;
@@ -16,10 +18,12 @@ typedef struct World {
 World world_create(float gravity);
 void world_free(World* world);
 Body* world_new_body(World* world);
-JointConstraint* world_new_constraint(World* world);
+JointConstraint* world_new_joint_constraint(World* world);
+Manifold* world_new_manifold(World* world);
 void world_add_force(World* world, Vec2 force);
 void world_add_torque(World* world, float torque);
 void world_update(World* world, float dt);
 void world_check_collisions(World* world);
 
 #endif // WORLD_H
+

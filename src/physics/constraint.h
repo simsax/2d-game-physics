@@ -6,6 +6,8 @@
 
 typedef struct World World;
 
+// TODO: refactor this stuff but only when we are sure about this
+
 typedef struct {
     // NOTE: after realloc these body pointers are invalidated since the bodies are allocated directly 
     // in the array (not their pointers). Use indices instead
@@ -22,9 +24,9 @@ typedef struct {
 } JointConstraint;
 
 typedef struct {
-    // can store body pointers directly because pentration constraints are resolved in one frame
-    Body* a;
-    Body* b;
+    World* world; // TODO: remove world from here?
+    int a_index; // index of body A in the world's bodies array
+    int b_index; // index of body B in the world's bodies array
     Vec2 a_collision_point; // collision point of A in world's space
     Vec2 b_collision_point; // collision point of B in world's space
     MatMN jacobian;
@@ -46,7 +48,7 @@ typedef struct {
     PenetrationConstraint* items;
 } PenetrationConstraintArray;
 
-JointConstraint constraint_joint_create(World* world, int index_a, int index_b, Vec2 anchor_point);
+JointConstraint constraint_joint_create(World* world, int a_index, int b_index, Vec2 anchor_point);
 void constraint_joint_free(JointConstraint* constraint);
 MatMN constraint_joint_get_inv_mass(JointConstraint* constraint);
 VecN constraint_joint_get_velocities(JointConstraint* constraint);
@@ -54,7 +56,7 @@ void constraint_joint_solve(JointConstraint* constraint);
 void constraint_joint_pre_solve(JointConstraint* constraint, float dt);
 void constraint_joint_post_solve(JointConstraint* constraint);
 
-PenetrationConstraint constraint_penetration_create(Body* a, Body* b, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal);
+PenetrationConstraint constraint_penetration_create(World* world, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal);
 void constraint_penetration_free(PenetrationConstraint* constraint);
 MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint);
 VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint);

@@ -77,7 +77,7 @@ void setup() {
     *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
-    static_box->friction = 0.5;
+    static_box->friction = 0.2;
     shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
     body_set_texture(static_box, "./assets/crate.png");
 
@@ -164,6 +164,8 @@ void update() {
     begin_frame();
     clear_screen(0x056263FF);
 
+    // TODO: fix timestep
+
     static float prev_time = 0;
     // wait until target frame time is reached
     float delta_time_prev_frame = GetTime() - prev_time;
@@ -233,8 +235,8 @@ void render() {
 
     // joints
     if (debug) {
-        for (int i = 0; i < world.constraints.count; i++) {
-            JointConstraint* constraint = &world.constraints.items[i];
+        for (int i = 0; i < world.joint_constraints.count; i++) {
+            JointConstraint* constraint = &world.joint_constraints.items[i];
             Body* a = &world.bodies.items[constraint->a_index];
             Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
             draw_fill_circle(anchor.x, anchor.y, 3, 0xFF0000FF);

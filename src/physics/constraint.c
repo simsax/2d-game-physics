@@ -8,17 +8,17 @@
 #include <math.h>
 
 JointConstraint constraint_joint_create(
-        World* world, int index_a, int index_b, Vec2 anchor_point) {
-    Body* a = &world->bodies.items[index_a];
-    Body* b = &world->bodies.items[index_b];
+        World* world, int a_index, int b_index, Vec2 anchor_point) {
+    Body* a = &world->bodies.items[a_index];
+    Body* b = &world->bodies.items[b_index];
     MatMN jacobian = matMN_create(1, 6);
     VecN lambda = vecN_create(1);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (JointConstraint) {
         .world = world,
-        .a_index = index_a,
-        .b_index = index_b,
+        .a_index = a_index,
+        .b_index = b_index,
         .a_point = body_world_to_local_space(a, anchor_point),
         .b_point = body_world_to_local_space(b, anchor_point),
         .jacobian = jacobian,
@@ -27,14 +27,15 @@ JointConstraint constraint_joint_create(
 }
 
 PenetrationConstraint constraint_penetration_create(
-        Body* a, Body* b, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal) {
+        World* world, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal) {
     MatMN jacobian = matMN_create(2, 6);
     VecN lambda = vecN_create(2);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (PenetrationConstraint) {
-        .a = a,
-        .b = b,
+        .world = world,
+        .a_index = a_index,
+        .b_index = b_index,
         .a_collision_point = a_collision_point,
         .b_collision_point = b_collision_point,
         .jacobian = jacobian,
@@ -74,8 +75,8 @@ MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
 }
 
 MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint) {
-    Body* a = constraint->a;
-    Body* b = constraint->b;
+    Body* a = &constraint->world->bodies.items[constraint->a_index];
+    Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN inv_mass = matMN_create(6, 6);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
@@ -102,8 +103,8 @@ VecN constraint_joint_get_velocities(JointConstraint* constraint) {
 }
 
 VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint) {
-    Body* a = constraint->a;
-    Body* b = constraint->b;
+    Body* a = &constraint->world->bodies.items[constraint->a_index];
+    Body* b = &constraint->world->bodies.items[constraint->b_index];
     VecN v = vecN_create(6);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
@@ -212,8 +213,8 @@ void constraint_joint_post_solve(JointConstraint* constraint) {
 }
 
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float dt) {
-    Body* a = constraint->a;
-    Body* b = constraint->b;
+    Body* a = &constraint->world->bodies.items[constraint->a_index];
+    Body* b = &constraint->world->bodies.items[constraint->b_index];
 
     // get collision points
     Vec2 pa = constraint->a_collision_point;
@@ -266,7 +267,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     matMN_free(jacobian_t);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.2f;
+    float beta = 0.3f;
     Vec2 pb_pa = vec2_sub(pb, pa);
     float C = vec2_dot(pb_pa, vec2_mult(normal, -1)); // positional error
     C = fmin(C, 0); // TODO: do we need this?
@@ -281,8 +282,8 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
 }
 
 void constraint_penetration_solve(PenetrationConstraint* constraint) {
-    Body* a = constraint->a;
-    Body* b = constraint->b;
+    Body* a = &constraint->world->bodies.items[constraint->a_index];
+    Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
     MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
     MatMN jacobian_t = matMN_transpose(jacobian);
@@ -316,7 +317,7 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     body_apply_impulse_angular(b, impulses.data[5]);
 
     // TODO: avoid heap allocations or use a bump allocator
-    /*vecN_free(old_cached_lambda);*/
+    vecN_free(old_cached_lambda);
     vecN_free(velocities);
     matMN_free(inv_mass);
     matMN_free(jacobian_t);

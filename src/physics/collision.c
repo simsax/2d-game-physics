@@ -4,31 +4,30 @@
 #include "vec2.h"
 #include <float.h>
 #include <string.h>
-#include "../graphics.h"
-#include <stdio.h>
 
-bool collision_iscolliding(Body* a, Body* b, Contact* contacts, int length) {
+bool collision_iscolliding(Body* a, Body* b, Contact* contacts, int* num_contacts) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
     bool b_is_circle = b->shape.type == CIRCLE_SHAPE;
     bool a_is_polygon = a->shape.type == POLYGON_SHAPE || a->shape.type == BOX_SHAPE;
     bool b_is_polygon = b->shape.type == POLYGON_SHAPE || b->shape.type == BOX_SHAPE;
 
     if (a_is_circle && b_is_circle) {
-        return collision_iscolliding_circlecircle(a, b, contacts, length);
+        return collision_iscolliding_circlecircle(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_polygon) {
-        return collision_iscolliding_polygonpolygon(a, b, contacts, length);
+        return collision_iscolliding_polygonpolygon(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_circle) {
-        return collision_iscolliding_polygoncircle(a, b, contacts, length);
+        return collision_iscolliding_polygoncircle(a, b, contacts, num_contacts);
     }
     if (a_is_circle && b_is_polygon) {
-        return collision_iscolliding_polygoncircle(b, a, contacts, length);
+        return collision_iscolliding_polygoncircle(b, a, contacts, num_contacts);
     }
     return false;
 }
 
-bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contacts, int length) {
+bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contacts, int* num_contacts) {
+    *num_contacts = 1;
     CircleShape* a_shape = &a->shape.as.circle;
     CircleShape* b_shape = &b->shape.as.circle;
 
@@ -52,7 +51,7 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contacts, int
     return true;
 }
 
-bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, int length) {
+bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, int* num_contacts) {
     PolygonShape* a_shape = &a->shape.as.polygon;
     PolygonShape* b_shape = &b->shape.as.polygon;
     int a_index_reference_edge, b_index_reference_edge;
@@ -86,14 +85,6 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, i
     Vec2 v0 = incident_shape->world_vertices.items[incident_index];
     Vec2 v1 = incident_shape->world_vertices.items[incident_next_index];
 
-    /*// debugging*/
-    /*draw_line_thick(v0.x, v0.y, v1.x, v1.y, 0xFF00FFFF, 4);*/
-    /*int index_next_reference_edge = (index_reference_edge + 1) % reference_shape->world_vertices.count;*/
-    /*Vec2 v2 = reference_shape->world_vertices.items[index_reference_edge];*/
-    /*Vec2 v3 = reference_shape->world_vertices.items[index_next_reference_edge];*/
-    /*draw_line_thick(v2.x, v2.y, v3.x, v3.y, 0x00FF00FF, 4);*/
-    // end debugging
-
     Vec2 contact_points[2] = { v0, v1 };
     Vec2 clipped_points[2] = { v0, v1 };
     // TODO: figure out for loop
@@ -111,13 +102,12 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, i
 
     Vec2 v_ref = reference_shape->world_vertices.items[index_reference_edge];
     // consider only clipped points whose separation is negative (objects are penetrating)
-    int contact_index = 0;
     for (int i = 0; i < 2; i++) {
         Vec2 v_clip = clipped_points[i];
         Vec2 ref_normal = vec2_normal(reference_edge);
         float separation = vec2_dot(vec2_sub(v_clip, v_ref), ref_normal);
         if (separation <= 0) {
-            Contact* contact = &contacts[contact_index++];
+            Contact* contact = &contacts[(*num_contacts)++];
             contact->a = a;
             contact->b = b;
             contact->normal = ref_normal;
@@ -138,10 +128,11 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, i
     return true;
 }
 
-bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contacts, int length) {
+bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* contacts, int* num_contacts) {
     // compute the nearest edge
     PolygonShape* polygon_shape = &polygon->shape.as.polygon;
     Vec2Array polygon_vertices = polygon_shape->world_vertices;
+    *num_contacts = 1;
 
     bool inside = true;
     Vec2 min_cur_vertex;

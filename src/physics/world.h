@@ -19,11 +19,12 @@ World world_create(float gravity);
 void world_free(World* world);
 Body* world_new_body(World* world);
 JointConstraint* world_new_joint_constraint(World* world);
-Manifold* world_new_manifold(World* world);
 void world_add_force(World* world, Vec2 force);
 void world_add_torque(World* world, float torque);
 void world_update(World* world, float dt);
 void world_check_collisions(World* world);
+Manifold* world_manifold_next(World* world);
+Manifold* world_manifold_find(World* world, int a_index, int b_index);
 
 #endif // WORLD_H
 

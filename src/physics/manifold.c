@@ -2,9 +2,12 @@
 #include "vec2.h"
 #include <stdio.h>
 
-Manifold manifold_create(int num_contacts) {
+Manifold manifold_create(int num_contacts, int a_index, int b_index) {
     return (Manifold) {
-        .num_contacts = num_contacts
+        .a_index = a_index,
+        .b_index = b_index,
+        .num_contacts = num_contacts,
+        .expired = false
     };
 }
 
@@ -18,7 +21,7 @@ bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int nu
     if (manifold->num_contacts != num_contacts)
         return false;
 
-    float distance_threshold = 0.1f;
+    float distance_threshold = 0.01f;
     for (int i = 0; i < num_contacts; i++) {
         Vec2 a_point_m = manifold->constraints[i].a_collision_point;
         Vec2 b_point_m = manifold->constraints[i].b_collision_point;
@@ -30,7 +33,7 @@ bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int nu
             return false;
         }
     }
-    /*printf("Found almost equal manifold!\n");*/
+    printf("Found almost equal manifold!\n");
     return true;
 }
 

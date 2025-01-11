@@ -130,13 +130,17 @@ void world_update(World* world, float dt) {
                         new_manifold = existing_manifold;
                     }
                     // else, do nothing, we re-use the manifold in the next frame
+                    // TODO: add sleep
                 }
                 if (new_manifold != NULL) {
                     *new_manifold = manifold_create(num_contacts, i, j);
                     for (int c = 0; c < num_contacts; c++) {
-                        /*// draw collision points*/
-                        /*draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 5, 0xFF0000FF);*/
-                        /*draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
+                        // draw collision points
+                        draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);
+                        draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);
+                        // draw normal
+                        Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));
+                        draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);
                         
                         // create new penetration constraint
                         new_manifold->constraints[c] = constraint_penetration_create(

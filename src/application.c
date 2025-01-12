@@ -75,16 +75,20 @@ void setup() {
     right_wall->friction = 0.2;
 
     Body* static_box = world_new_body(&world);
-    *static_box = body_create_box(300, 300, x_center, y_center, 0.0);
+    *static_box = body_create_box(200, 1000, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
     static_box->friction = 0.2;
     shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
-    body_set_texture(static_box, "./assets/crate.png");
 
+    /*Body* static_ball = world_new_body(&world);*/
+    /**static_ball = body_create_circle(100, x_center + 400, y_center, 0.0);*/
+    /**/
     /*Body* box = world_new_body(&world);*/
-    /**box = body_create_box(200, 200, x_center, y_center, 1.0);*/
-    /*box->rotation = 0;*/
+    /**box = body_create_box(200, 200, x_center, y_center, 0.0);*/
+
+    /*Body* c = world_new_body(&world);*/
+    /**c = body_create_circle(100, x_center, y_center, 0.0);*/
 }
 
 void destroy() {
@@ -128,6 +132,8 @@ void input() {
     if (IsKeyPressed(KEY_P)) {
         paused = !paused;
     }
+
+    /*world.bodies.items[5].position = mouse_coord;*/
 
     if (!paused) {
         // mouse

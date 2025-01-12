@@ -108,14 +108,14 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    bool warm_start = false;
+    bool warm_start = true;
     for (int i = 0; i < world->bodies.count - 1; i++) {
         for (int j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
             Body* b = &world->bodies.items[j];
-            Contact contacts[2] = { NULL_CONTACT };
+            Contact contacts[2];
             int num_contacts = 0;
-            if (collision_iscolliding(a, b, contacts, &num_contacts)) {
+            if (collision_iscolliding(a, b, i, j, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
                 Manifold* existing_manifold = world_manifold_find(world, i, j);
                 Manifold* new_manifold = NULL;
@@ -135,16 +135,15 @@ void world_update(World* world, float dt) {
                 if (new_manifold != NULL) {
                     *new_manifold = manifold_create(num_contacts, i, j);
                     for (int c = 0; c < num_contacts; c++) {
-                        // draw collision points
-                        draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);
-                        draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);
-                        // draw normal
-                        Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));
-                        draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);
+                        // draw collision points and normal
+                        /*draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
+                        /*draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
+                        /*Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));*/
+                        /*draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
                         
                         // create new penetration constraint
                         new_manifold->constraints[c] = constraint_penetration_create(
-                                world, i, j, contacts[c].start, contacts[c].end, contacts[c].normal);
+                                world, contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal);
                     }
                 }
             }

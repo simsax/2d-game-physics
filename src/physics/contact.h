@@ -2,13 +2,10 @@
 #define CONTACT_H
 
 #include "vec2.h"
-#include "body.h"
-
-#define NULL_CONTACT (Contact) {.a = NULL, .b = NULL}
 
 typedef struct {
-    Body* a;
-    Body* b;
+    int a_index;
+    int b_index;
 
     Vec2 start;
     Vec2 end;

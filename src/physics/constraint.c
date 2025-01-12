@@ -279,24 +279,23 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     float e = a->restitution * b->restitution;
 
     constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
+
+    MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
+    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
+    constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t);
 }
 
 void constraint_penetration_solve(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
-    MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
-    MatMN jacobian_t = matMN_transpose(jacobian);
-    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
-    MatMN lhs = matMN_mult_mat(j_inv_mass, jacobian_t); // A (2x2)
-    // TODO: lhs in the presolve (member variable of struct)
 
     VecN velocities = constraint_penetration_get_velocities(constraint);
     VecN j_v = matMN_mult_vec(jacobian, velocities);
     VecN rhs = vecN_mult(j_v, -1.0f); // B (1x2)
     rhs.data[0] -= constraint->bias;
 
-    VecN lambda = matMN_solve_gauss_seidel(lhs, rhs); // (1x2)
+    VecN lambda = matMN_solve_gauss_seidel(constraint->lhs, rhs); // (1x2)
     VecN old_cached_lambda = constraint->cached_lambda;
     constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);
     constraint->cached_lambda.data[0] = (constraint->cached_lambda.data[0] < 0.0f) ? 0.0f : constraint->cached_lambda.data[0];
@@ -310,6 +309,7 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     lambda = vecN_sub(constraint->cached_lambda, old_cached_lambda);
 
     // compute final impulses with direction and magnitude
+    MatMN jacobian_t = matMN_transpose(jacobian);
     VecN impulses = matMN_mult_vec(jacobian_t, lambda);
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
@@ -319,10 +319,7 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     // TODO: avoid heap allocations or use a bump allocator
     vecN_free(old_cached_lambda);
     vecN_free(velocities);
-    matMN_free(inv_mass);
     matMN_free(jacobian_t);
-    matMN_free(j_inv_mass);
-    matMN_free(lhs);
     vecN_free(j_v);
     vecN_free(rhs);
     vecN_free(lambda);

@@ -30,6 +30,7 @@ typedef struct {
     Vec2 a_collision_point; // collision point of A in world's space
     Vec2 b_collision_point; // collision point of B in world's space
     MatMN jacobian;
+    MatMN lhs; // J*M_inv*Jt
     VecN cached_lambda;
     float bias;
     Vec2 normal;

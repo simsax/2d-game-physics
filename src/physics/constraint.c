@@ -159,7 +159,7 @@ void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
     matMN_free(jacobian_t);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.4f;
+    float beta = 0.2f;
     float C = vec2_dot(pb_pa, pb_pa); // positional error
     C = fmax(C, 0);
     constraint->bias = (beta / dt) * C;
@@ -267,7 +267,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     matMN_free(jacobian_t);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.3f;
+    float beta = 0.2f;
     Vec2 pb_pa = vec2_sub(pb, pa);
     float C = vec2_dot(pb_pa, vec2_mult(normal, -1)); // positional error
     C = fmin(C, 0); // TODO: do we need this?
@@ -296,6 +296,7 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     VecN rhs = vecN_mult(j_v, -1.0f); // B (1x2)
     rhs.data[0] -= constraint->bias;
 
+    // TODO: compute directly
     VecN lambda = matMN_solve_gauss_seidel(lhs, rhs); // (1x2)
     VecN old_cached_lambda = constraint->cached_lambda;
     constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);

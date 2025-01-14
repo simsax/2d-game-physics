@@ -108,7 +108,7 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    bool warm_start = true;
+    bool warm_start = false;
     for (int i = 0; i < world->bodies.count - 1; i++) {
         for (int j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];

@@ -51,3 +51,11 @@ float vecN_dot(VecN a, VecN b) {
         sum += a.data[i] * b.data[i];
     return sum;
 }
+
+void vecN_print(VecN vec) {
+    printf("[\n");
+    for (int i = 0; i < vec.N; i++) {
+        printf("    %f\n", vec.data[i]);
+    }
+    printf("]\n");
+}

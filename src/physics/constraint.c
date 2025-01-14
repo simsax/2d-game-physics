@@ -264,8 +264,6 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
     body_apply_impulse_angular(b, impulses.data[5]);
 
-    matMN_free(jacobian_t);
-
     // compute bias term (baumgarte stabilization)
     float beta = 0.2f;
     Vec2 pb_pa = vec2_sub(pb, pa);
@@ -283,6 +281,9 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
     MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
     constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t);
+
+    matMN_free(jacobian_t);
+
 }
 
 void constraint_penetration_solve(PenetrationConstraint* constraint) {

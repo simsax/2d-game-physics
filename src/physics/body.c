@@ -173,7 +173,7 @@ void body_apply_impulse_linear(Body* body, Vec2 jn) {
 void body_apply_impulse_angular(Body *body, float j) {
     if (body_is_static(body))
         return;
-    body->angular_velocity += j * body->inv_I;;
+    body->angular_velocity += j * body->inv_I;
 }
 
 void body_set_texture(Body* body, const char* file_path) {

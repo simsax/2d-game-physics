@@ -28,7 +28,7 @@ static double prev_time_fps = 0.0;
 // public globals
 bool running;
 static bool paused = false;
-static bool debug = false;
+static bool debug = true;
 
 // private globals
 static World world;
@@ -152,9 +152,9 @@ void input() {
         } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             // box
             Body* new_box = world_new_body(&world);
-            *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 5.0);
+            *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 1.0);
             new_box->restitution = 0.2f;
-            new_box->friction = 0.5f;
+            new_box->friction = 1.0f;
             body_set_texture(new_box, "./assets/crate.png");
 
             // polygon

@@ -82,6 +82,7 @@ void world_update(World* world, float dt) {
         Body* body = &world->bodies.items[i];
 
         // add weight force
+        // TODO: calculation in meters and not in pixels
         Vec2 weight = VEC2(0.0,  (world->gravity / body->inv_mass) * PIXELS_PER_METER);
         body_add_force(body, weight);
 
@@ -136,10 +137,10 @@ void world_update(World* world, float dt) {
                     *new_manifold = manifold_create(num_contacts, i, j);
                     for (int c = 0; c < num_contacts; c++) {
                         // draw collision points and normal
-                        /*draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
-                        /*draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
-                        /*Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));*/
-                        /*draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
+                        draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);
+                        draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);
+                        Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));
+                        draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);
                         
                         // create new penetration constraint
                         new_manifold->constraints[c] = constraint_penetration_create(
@@ -168,7 +169,7 @@ void world_update(World* world, float dt) {
         if (world->manifolds.items[c].a_index != -1)
             manifold_pre_solve(&world->manifolds.items[c], dt);
     }
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 10; i++) {
         for (int c = 0; c < world->joint_constraints.count; c++) {
             constraint_joint_solve(&world->joint_constraints.items[c]);
         }

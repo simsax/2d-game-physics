@@ -268,7 +268,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     float beta = 0.2f;
     Vec2 pb_pa = vec2_sub(pb, pa);
     float C = vec2_dot(pb_pa, vec2_mult(normal, -1)); // positional error
-    C = fmin(C, 0); // TODO: do we need this?
+    C = fmin(C + 0.01f, 0); // TODO: do we need this?
 
     Vec2 va = vec2_add(a->velocity, VEC2(-a->angular_velocity * ra.y, a->angular_velocity * ra.x));
     Vec2 vb = vec2_add(b->velocity, VEC2(-b->angular_velocity * rb.y, b->angular_velocity * rb.x));
@@ -276,6 +276,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
 
     float e = a->restitution * b->restitution;
 
+    // TODO: penetration and restitution slop
     constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
 
     MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
@@ -283,9 +284,11 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t);
 
     matMN_free(jacobian_t);
-
+    matMN_free(inv_mass);
+    matMN_free(j_inv_mass);
 }
 
+// TODO: num_contacts is just for debugging
 void constraint_penetration_solve(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
@@ -296,8 +299,20 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     VecN rhs = vecN_mult(j_v, -1.0f); // B (1x2)
     rhs.data[0] -= constraint->bias;
 
-    // TODO: compute directly
-    VecN lambda = matMN_solve_gauss_seidel(constraint->lhs, rhs); // (1x2)
+    // Computing lambda by solving 2x2 system directly
+    MatMN A = constraint->lhs;
+    float det_A = MAT_GET(A, 0, 0) * MAT_GET(A, 1, 1) - MAT_GET(A, 1, 0) * MAT_GET(A, 0, 1);
+    /*matMN_print(A);*/
+
+    // TODO: now friction can't be exactly zero
+    VecN lambda = vecN_create(2); // TODO: use vec2
+    if (det_A == 0.0f) { // TODO: is this comparison legit
+        vecN_zero(lambda);
+    } else {
+        lambda.data[0] = (MAT_GET(A, 1, 1) * rhs.data[0] - MAT_GET(A, 0, 1) * rhs.data[1]) / det_A;
+        lambda.data[1] = (MAT_GET(A, 0, 0) * rhs.data[1] - MAT_GET(A, 1, 0) * rhs.data[0]) / det_A;
+    }
+
     VecN old_cached_lambda = constraint->cached_lambda;
     constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);
     constraint->cached_lambda.data[0] = (constraint->cached_lambda.data[0] < 0.0f) ? 0.0f : constraint->cached_lambda.data[0];
@@ -313,6 +328,8 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     // compute final impulses with direction and magnitude
     MatMN jacobian_t = matMN_transpose(jacobian);
     VecN impulses = matMN_mult_vec(jacobian_t, lambda);
+    /*if (num_contacts == 2)*/
+    /*vecN_print(impulses);*/
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
@@ -327,6 +344,8 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     vecN_free(lambda);
     vecN_free(impulses);
 }
+
+// TODO: impulse is too small?????
 
 
 void constraint_penetration_post_solve(PenetrationConstraint* constraint) {

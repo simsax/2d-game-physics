@@ -44,9 +44,13 @@ void manifold_pre_solve(Manifold* manifold, float dt) {
 }
 
 void manifold_solve(Manifold* manifold) {
+    /*if (manifold->num_contacts == 2)*/
+        /*printf("Manifold %d %d\n", manifold->a_index, manifold->b_index);*/
     for (int i = 0; i < manifold->num_contacts; i++) {
         constraint_penetration_solve(&manifold->constraints[i]);
     }
+    /*if (manifold->num_contacts == 2)*/
+    /*    printf("----------\n");*/
 }
 
 void manifold_post_solve(Manifold* manifold) {

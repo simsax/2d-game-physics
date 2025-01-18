@@ -5,6 +5,7 @@
 #include "array.h"
 #include "constraint.h"
 #include "manifold.h"
+#include "memory.h"
 
 typedef struct World {
     float gravity;
@@ -13,6 +14,7 @@ typedef struct World {
     ManifoldArray manifolds;
     Vec2Array forces;
     FloatArray torques;
+    Arena arena;
 } World;
 
 World world_create(float gravity);

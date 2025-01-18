@@ -11,8 +11,8 @@ JointConstraint constraint_joint_create(
         World* world, int a_index, int b_index, Vec2 anchor_point) {
     Body* a = &world->bodies.items[a_index];
     Body* b = &world->bodies.items[b_index];
-    MatMN jacobian = matMN_create(1, 6);
-    VecN lambda = vecN_create(1);
+    MatMN jacobian = matMN_create(1, 6, &world->arena);
+    VecN lambda = vecN_create(1, &world->arena);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (JointConstraint) {
@@ -28,8 +28,8 @@ JointConstraint constraint_joint_create(
 
 PenetrationConstraint constraint_penetration_create(
         World* world, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal) {
-    MatMN jacobian = matMN_create(2, 6);
-    VecN lambda = vecN_create(2);
+    MatMN jacobian = matMN_create(2, 6, &world->arena);
+    VecN lambda = vecN_create(2, &world->arena);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (PenetrationConstraint) {
@@ -45,14 +45,9 @@ PenetrationConstraint constraint_penetration_create(
 }
 
 void constraint_joint_free(JointConstraint* constraint) {
-    matMN_free(constraint->jacobian);
-    vecN_free(constraint->cached_lambda);
 }
 
 void constraint_penetration_free(PenetrationConstraint* constraint) {
-    matMN_free(constraint->jacobian);
-    matMN_free(constraint->lhs);
-    vecN_free(constraint->cached_lambda);
 }
 
 // [ 1/ma  0     0     0     0     0 ]
@@ -64,7 +59,7 @@ void constraint_penetration_free(PenetrationConstraint* constraint) {
 MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    MatMN inv_mass = matMN_create(6, 6);
+    MatMN inv_mass = matMN_create(6, 6, &constraint->world->arena);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
     MAT_SET(inv_mass, 1, 1, a->inv_mass);
@@ -78,7 +73,7 @@ MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
 MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    MatMN inv_mass = matMN_create(6, 6);
+    MatMN inv_mass = matMN_create(6, 6, &constraint->world->arena);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
     MAT_SET(inv_mass, 1, 1, a->inv_mass);
@@ -93,7 +88,7 @@ MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint) {
 VecN constraint_joint_get_velocities(JointConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    VecN v = vecN_create(6);
+    VecN v = vecN_create(6, &constraint->world->arena);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
     v.data[2] = a->angular_velocity;
@@ -106,7 +101,7 @@ VecN constraint_joint_get_velocities(JointConstraint* constraint) {
 VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    VecN v = vecN_create(6);
+    VecN v = vecN_create(6, &constraint->world->arena);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
     v.data[2] = a->angular_velocity;
@@ -117,6 +112,7 @@ VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint) {
 }
 
 void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
+    Arena* arena = &constraint->world->arena;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
 
@@ -150,14 +146,12 @@ void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
     MAT_SET(jacobian, 0, 5, j4);
 
     // warm starting (apply cached lambda)
-    MatMN jacobian_t = matMN_transpose(jacobian);
-    VecN impulses = matMN_mult_vec(jacobian_t, constraint->cached_lambda);
+    MatMN jacobian_t = matMN_transpose(jacobian, arena);
+    VecN impulses = matMN_mult_vec(jacobian_t, constraint->cached_lambda, arena);
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
     body_apply_impulse_angular(b, impulses.data[5]);
-
-    matMN_free(jacobian_t);
 
     // compute bias term (baumgarte stabilization)
     float beta = 0.2f;
@@ -167,45 +161,34 @@ void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
 }
 
 void constraint_joint_solve(JointConstraint* constraint) {
+    Arena* arena = &constraint->world->arena;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
     MatMN inv_mass = constraint_joint_get_inv_mass(constraint);
-    MatMN jacobian_t = matMN_transpose(jacobian);
-    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
-    MatMN lhs = matMN_mult_mat(j_inv_mass, jacobian_t); // A
+    MatMN jacobian_t = matMN_transpose(jacobian, arena);
+    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass, arena);
+    MatMN lhs = matMN_mult_mat(j_inv_mass, jacobian_t, arena); // A
     // TODO: lhs in the presolve (member variable of struct)
 
     VecN velocities = constraint_joint_get_velocities(constraint);
-    VecN j_v = matMN_mult_vec(jacobian, velocities);
-    VecN rhs = vecN_mult(j_v, -1.0f); // B
+    VecN j_v = matMN_mult_vec(jacobian, velocities, arena);
+    VecN rhs = vecN_mult(j_v, -1.0f, arena); // B
     rhs.data[0] -= constraint->bias;
 
     // TODO: we end up with 1x1 matrices on numerator, we can solve the system trivially
     /*float denominator = MAT_GET(lhs, 0, 0);*/
     /*VecN lambda = vecN_mult(rhs, denominator == 0.0f ? 1.0f : (1.0f/denominator));*/
-    VecN lambda = matMN_solve_gauss_seidel(lhs, rhs);
+    VecN lambda = matMN_solve_gauss_seidel(lhs, rhs, arena);
     VecN old_cached_lambda = constraint->cached_lambda;
-    constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);
+    constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda, arena);
 
     // compute final impulses with direction and magnitude
-    VecN impulses = matMN_mult_vec(jacobian_t, lambda);
+    VecN impulses = matMN_mult_vec(jacobian_t, lambda, arena);
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
     body_apply_impulse_angular(b, impulses.data[5]);
-
-    // TODO: avoid heap allocations or use a bump allocator
-    vecN_free(old_cached_lambda);
-    vecN_free(velocities);
-    matMN_free(inv_mass);
-    matMN_free(jacobian_t);
-    matMN_free(j_inv_mass);
-    matMN_free(lhs);
-    vecN_free(j_v);
-    vecN_free(rhs);
-    vecN_free(lambda);
-    vecN_free(impulses);
 }
 
 
@@ -214,6 +197,7 @@ void constraint_joint_post_solve(JointConstraint* constraint) {
 }
 
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float dt) {
+    Arena* arena = &constraint->world->arena;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
 
@@ -258,8 +242,8 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     }
 
     // warm starting (apply cached lambda)
-    MatMN jacobian_t = matMN_transpose(jacobian);
-    VecN impulses = matMN_mult_vec(jacobian_t, constraint->cached_lambda);
+    MatMN jacobian_t = matMN_transpose(jacobian, arena);
+    VecN impulses = matMN_mult_vec(jacobian_t, constraint->cached_lambda, arena);
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
@@ -281,35 +265,31 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
 
     MatMN inv_mass = constraint_penetration_get_inv_mass(constraint);
-    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
-    constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t);
+    MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass, arena);
+    constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t, arena);
 
     // keep only diagonal terms
     MAT_SET(constraint->lhs, 0, 1, 0.0f);
     MAT_SET(constraint->lhs, 1, 0, 0.0f);
-
-    matMN_free(jacobian_t);
-    matMN_free(inv_mass);
-    matMN_free(j_inv_mass);
-    vecN_free(impulses);
 }
 
 // TODO: circles keep rotating forever
 void constraint_penetration_solve(PenetrationConstraint* constraint) {
+    Arena* arena = &constraint->world->arena;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
 
     VecN velocities = constraint_penetration_get_velocities(constraint);
-    VecN j_v = matMN_mult_vec(jacobian, velocities);
-    VecN rhs = vecN_mult(j_v, -1.0f); // B (1x2)
+    VecN j_v = matMN_mult_vec(jacobian, velocities, arena);
+    VecN rhs = vecN_mult(j_v, -1.0f, arena); // B (1x2)
     rhs.data[0] -= constraint->bias;
 
     // Computing lambda by solving 2x2 system directly
     MatMN A = constraint->lhs;
     float det_A = MAT_GET(A, 0, 0) * MAT_GET(A, 1, 1) - MAT_GET(A, 1, 0) * MAT_GET(A, 0, 1);
 
-    VecN lambda = vecN_create(2); // TODO: use vec2
+    VecN lambda = vecN_create(2, arena); // TODO: use vec2
     if (constraint->friction) {
         if (det_A == 0.0f) { // TODO: is this comparison legit
             vecN_zero(lambda);
@@ -327,7 +307,7 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
 
     // clamp lambda
     VecN old_cached_lambda = constraint->cached_lambda;
-    constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);
+    constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda, arena);
     constraint->cached_lambda.data[0] = (constraint->cached_lambda.data[0] < 0.0f) ? 0.0f : constraint->cached_lambda.data[0];
 
     // keep friction values between -λn*μ and λn*μ
@@ -336,26 +316,16 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
         constraint->cached_lambda.data[1] = clamp(constraint->cached_lambda.data[1], -max_friction, max_friction);
     }
 
-    vecN_free(lambda);
-    lambda = vecN_sub(constraint->cached_lambda, old_cached_lambda);
+    lambda = vecN_sub(constraint->cached_lambda, old_cached_lambda, arena);
 
     // compute final impulses with direction and magnitude
-    MatMN jacobian_t = matMN_transpose(jacobian);
-    VecN impulses = matMN_mult_vec(jacobian_t, lambda);
+    MatMN jacobian_t = matMN_transpose(jacobian, arena);
+    VecN impulses = matMN_mult_vec(jacobian_t, lambda, arena);
 
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
     body_apply_impulse_angular(b, impulses.data[5]);
-
-    // TODO: avoid heap allocations or use a bump allocator
-    vecN_free(old_cached_lambda);
-    vecN_free(velocities);
-    matMN_free(jacobian_t);
-    vecN_free(j_v);
-    vecN_free(rhs);
-    vecN_free(lambda);
-    vecN_free(impulses);
 }
 
 void constraint_penetration_post_solve(PenetrationConstraint* constraint) {

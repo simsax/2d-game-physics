@@ -1,14 +1,15 @@
 #include "matMN.h"
 #include "vecN.h"
+#include "memory.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-// TODO: get rid of heap allocations once I figure out the usage, compare with cglm
+// TODO: compare with cglm
 
-MatMN matMN_create(int num_rows, int num_cols) {
-    float *data = malloc(sizeof(float) * num_rows * num_cols);
+MatMN matMN_create(int num_rows, int num_cols, Arena* arena) {
+    float *data = arena_alloc(arena, sizeof(float) * num_rows * num_cols);
     if (data == NULL) {
         printf("ERROR: Mem allocation failed, quitting.\n");
         exit(1);
@@ -28,8 +29,8 @@ void matMN_zero(MatMN mat) {
     memset(mat.data, 0, mat.M * mat.N * sizeof(float));
 }
 
-MatMN matMN_transpose(MatMN mat) {
-    MatMN trans = matMN_create(mat.N, mat.M);
+MatMN matMN_transpose(MatMN mat, Arena* arena) {
+    MatMN trans = matMN_create(mat.N, mat.M, arena);
     for (int i = 0; i < mat.M; i++) {
         for (int j = 0; j < mat.N; j++) {
             float val = MAT_GET(mat, i, j);
@@ -39,13 +40,13 @@ MatMN matMN_transpose(MatMN mat) {
     return trans;
 }
 
-VecN matMN_mult_vec(MatMN mat, VecN vec) {
+VecN matMN_mult_vec(MatMN mat, VecN vec, Arena* arena) {
     if (mat.N != vec.N) {
         printf("ERROR: cannot multiply matrix of dimensions (%d, %d) with vector of dimensions (%d, 1).\n",
                 mat.M, mat.N, vec.N);
         exit(1);
     }
-    VecN result = vecN_create(mat.M);
+    VecN result = vecN_create(mat.M, arena);
     for (int i = 0; i < mat.M; i++) {
         float val = 0;
         // dot prod of row i of mat with vec
@@ -57,13 +58,13 @@ VecN matMN_mult_vec(MatMN mat, VecN vec) {
     return result;
 }
 
-MatMN matMN_mult_mat(MatMN a, MatMN b) {
+MatMN matMN_mult_mat(MatMN a, MatMN b, Arena* arena) {
     if (a.N != b.M) {
         printf("ERROR: cannot multiply matrix of dimensions (%d, %d) with matrix of dimensions (%d, %d).\n",
                 a.M, a.N, b.M, b.N);
         exit(1);
     }
-    MatMN result = matMN_create(a.M, b.N);
+    MatMN result = matMN_create(a.M, b.N, arena);
     for (int i = 0; i < result.M; i++) {
         for (int j = 0; j < result.N; j++) {
             float val = 0;
@@ -77,12 +78,12 @@ MatMN matMN_mult_mat(MatMN a, MatMN b) {
     return result;
 }
 
-VecN matMN_solve_gauss_seidel(MatMN a, VecN b) {
+VecN matMN_solve_gauss_seidel(MatMN a, VecN b, Arena* arena) {
     int N = b.N;
-    VecN X = vecN_create(N);
+    VecN X = vecN_create(N, arena);
     vecN_zero(X);
 
-    for (int iterations = 0; iterations < N; iterations++) {
+    for (int iterations = 0; iterations < 10; iterations++) {
         for (int i = 0; i < N; i++) {
             float a_ii = MAT_GET(a, i, i);
             float ai_dot_x = 0.0f;
@@ -98,6 +99,7 @@ VecN matMN_solve_gauss_seidel(MatMN a, VecN b) {
 
     return X;
 }
+
 
 void matMN_print(MatMN m) {
     printf("[\n");

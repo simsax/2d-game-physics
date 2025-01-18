@@ -12,6 +12,7 @@
 #include "physics/collision.h"
 #include "physics/contact.h"
 #include "physics/world.h"
+#include "physics/memory.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -25,6 +26,11 @@ static double prev_time_fps = 0.0;
 
 #endif
 
+// palette https://coolors.co/1a0f0d-392426-6b2c2e-925d5e-5d1816-251a1a-150705
+#define COLOR_BACKGROUND 0x110604FF
+#define COLOR_CIRCLE 0x6B2C2EFF
+#define COLOR_BOX 0x925D5EFF
+
 // starts tanking at 900 boxes
 // 30 fps with 1200 boxes
 // 12 fps with 2000 boxes
@@ -36,7 +42,7 @@ static bool debug = true;
 
 // private globals
 static World world;
-static Vec2 push_force = VEC2(0, 0);
+static Arena arena;
 static Vec2 mouse_coord = VEC2(0, 0);
 
 // ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
@@ -112,30 +118,6 @@ void input() {
     }
 
     const float force = 50 * PIXELS_PER_METER;
-    if (IsKeyDown(KEY_UP)) {
-        push_force.y = -force;
-    }
-    if (IsKeyDown(KEY_DOWN)) {
-        push_force.y = force;
-    }
-    if (IsKeyDown(KEY_LEFT)) {
-        push_force.x = -force;
-    }
-    if (IsKeyDown(KEY_RIGHT)) {
-        push_force.x = force;
-    }
-    if (IsKeyReleased(KEY_UP)) {
-        push_force.y = 0;
-    }
-    if (IsKeyReleased(KEY_DOWN)) {
-        push_force.y = 0;
-    }
-    if (IsKeyReleased(KEY_LEFT)) {
-        push_force.x = 0;
-    }
-    if (IsKeyReleased(KEY_RIGHT)) {
-        push_force.x = 0;
-    }
     if (IsKeyPressed(KEY_D)) {
         debug = !debug;
     }
@@ -217,7 +199,7 @@ void update() {
 
     if (!paused) {
         // for debug draws
-        clear_screen(0x056263FF);
+        clear_screen(COLOR_BACKGROUND);
         world_update(&world, delta_time);
     }
 }
@@ -231,7 +213,6 @@ void render(void) {
         // bodies
         for (int i = 0; i < world.bodies.count; i++) {
             Body* body = &world.bodies.items[i];
-            uint32_t color = 0xFFFFFFFF;
             if (body->shape.type == CIRCLE_SHAPE) {
                 if (!debug && body->texture.id) {
                     float diameter = body->shape.as.circle.radius * 2;
@@ -239,7 +220,7 @@ void render(void) {
                             body->rotation, &body->texture);
                 } else {
                     draw_circle_line(body->position.x, body->position.y,
-                            body->shape.as.circle.radius, body->rotation, color);
+                            body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
                 }
             }  
             if (body->shape.type == BOX_SHAPE) {
@@ -248,15 +229,15 @@ void render(void) {
                     draw_texture(body->position.x, body->position.y, box_shape->width,
                             box_shape->height, body->rotation, &body->texture);
                 } else {
-                    draw_polygon(body->position.x, body->position.y, box_shape->polygon.world_vertices, color);
+                    draw_polygon(body->position.x, body->position.y, box_shape->polygon.world_vertices, COLOR_BOX);
                 }
             }
             if (body->shape.type == POLYGON_SHAPE) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
                 if (!debug) {
-                    draw_fill_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, color);
+                    draw_fill_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
                 } else {
-                    draw_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, color);
+                    draw_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
                 }
             }
         }

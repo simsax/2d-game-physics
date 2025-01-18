@@ -5,12 +5,17 @@
 #include "collision.h"
 #include "manifold.h"
 #include "utils.h"
+#include "memory.h"
 
 #define SOLVE_ITERATIONS 10
+#define INITIAL_SIZE (1024 * 1024) // 1 MB
 
 World world_create(float gravity) {
+    Arena arena;
+    arena_init(&arena, INITIAL_SIZE);
     return (World) {
-        .gravity = -gravity // y points down in screen space
+        .gravity = -gravity, // y points down in screen space
+        .arena = arena
     };
 }
 

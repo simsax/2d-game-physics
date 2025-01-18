@@ -292,7 +292,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     matMN_free(j_inv_mass);
 }
 
-// TODO: num_contacts is just for debugging
+// TODO: circles keep rotating forever
 void constraint_penetration_solve(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
@@ -306,7 +306,6 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     // Computing lambda by solving 2x2 system directly
     MatMN A = constraint->lhs;
     float det_A = MAT_GET(A, 0, 0) * MAT_GET(A, 1, 1) - MAT_GET(A, 1, 0) * MAT_GET(A, 0, 1);
-    /*matMN_print(A);*/
 
     VecN lambda = vecN_create(2); // TODO: use vec2
     if (constraint->friction) {

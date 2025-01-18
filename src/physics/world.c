@@ -5,7 +5,8 @@
 #include "collision.h"
 #include "manifold.h"
 #include "utils.h"
-#include "../graphics.h"
+
+#define SOLVE_ITERATIONS 10
 
 World world_create(float gravity) {
     return (World) {
@@ -109,6 +110,7 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
+    // TODO: warm starting does not work
     bool warm_start = false;
     for (int i = 0; i < world->bodies.count - 1; i++) {
         for (int j = i + 1; j < world->bodies.count; j++) {
@@ -169,7 +171,7 @@ void world_update(World* world, float dt) {
         if (world->manifolds.items[c].a_index != -1)
             manifold_pre_solve(&world->manifolds.items[c], dt);
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < SOLVE_ITERATIONS; i++) {
         for (int c = 0; c < world->joint_constraints.count; c++) {
             constraint_joint_solve(&world->joint_constraints.items[c]);
         }

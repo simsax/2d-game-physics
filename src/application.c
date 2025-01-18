@@ -25,6 +25,10 @@ static double prev_time_fps = 0.0;
 
 #endif
 
+// starts tanking at 900 boxes
+// 30 fps with 1200 boxes
+// 12 fps with 2000 boxes
+
 // public globals
 bool running;
 static bool paused = false;
@@ -65,20 +69,26 @@ void setup() {
     floor->friction = 0.2;
 
     Body* left_wall = world_new_body(&world);
-    *left_wall = body_create_box(50, WINDOW_HEIGHT - 100, 50, WINDOW_HEIGHT / 2 - 25, 0.0);
-    left_wall->restitution = 0.2;
+    *left_wall = body_create_box(50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
+    left_wall->restitution = 0.8;
     left_wall->friction = 0.2;
 
     Body* right_wall = world_new_body(&world); 
-    *right_wall = body_create_box(50, WINDOW_HEIGHT - 100, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2 - 25, 0.0);
-    right_wall->restitution = 0.2;
+    *right_wall = body_create_box(50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
+    right_wall->restitution = 0.8;
     right_wall->friction = 0.2;
 
+    Body* ceiling = world_new_body(&world);
+    *ceiling = body_create_box(WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
+    ceiling->restitution = 0.8;
+    ceiling->friction = 0.2;
+
     Body* static_box = world_new_body(&world);
-    *static_box = body_create_box(200, 1200, x_center, y_center, 0.0);
+    *static_box = body_create_box(50, 800, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
     static_box->friction = 0.3;
+    static_box->angular_velocity = 2.0f;
     shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
 
     /*Body* static_ball = world_new_body(&world);*/
@@ -140,21 +150,25 @@ void input() {
         mouse_coord.x = GetMouseX();
         mouse_coord.y = GetMouseY();
         
-        /*if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {*/
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+        /*if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {*/
             //circle
             Body* new_circle = world_new_body(&world);
-            *new_circle = body_create_circle(30, mouse_coord.x, mouse_coord.y, 1.0);
+            *new_circle = body_create_circle(15, mouse_coord.x, mouse_coord.y, 1.0);
             new_circle->restitution = 0.9f;
             new_circle->friction = 1.0f;
             /*body_set_texture(new_circle, "./assets/basketball.png");*/
-        /*} else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {*/
-        } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
+        /*} else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {*/
             // box
-            Body* new_box = world_new_body(&world);
-            *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 1.0);
-            new_box->restitution = 0.2f;
-            new_box->friction = 0.3f;
+
+            // add 10 boxes (to debug)
+            for (int i = 0; i < 10; i++) {
+                Body* new_box = world_new_body(&world);
+                *new_box = body_create_box(20, 20, mouse_coord.x, mouse_coord.y, 1.0);
+                new_box->restitution = 0.2f;
+                new_box->friction = 0.8f;
+            }
             /*body_set_texture(new_box, "./assets/crate.png");*/
 
             // polygon
@@ -168,6 +182,8 @@ void input() {
     }
 }
 
+// TODO: zoom in and out with mouse wheel, ability to navigate the world
+// this should be outside the scope of the physics engine though
 
 void update() {
     begin_frame();
@@ -210,7 +226,7 @@ void update() {
 /*static Vector2[] Vec2_to_Vector2(Vec2Array* array) {*/
 /*}*/
 
-void render() {
+void render(void) {
     if (!paused) {
         // bodies
         for (int i = 0; i < world.bodies.count; i++) {

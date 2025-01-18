@@ -33,7 +33,6 @@ bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int nu
             return false;
         }
     }
-    /*printf("Found almost equal manifold!\n");*/
     return true;
 }
 

@@ -51,6 +51,7 @@ void constraint_joint_free(JointConstraint* constraint) {
 
 void constraint_penetration_free(PenetrationConstraint* constraint) {
     matMN_free(constraint->jacobian);
+    matMN_free(constraint->lhs);
     vecN_free(constraint->cached_lambda);
 }
 
@@ -290,6 +291,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     matMN_free(jacobian_t);
     matMN_free(inv_mass);
     matMN_free(j_inv_mass);
+    vecN_free(impulses);
 }
 
 // TODO: circles keep rotating forever
@@ -334,13 +336,13 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
         constraint->cached_lambda.data[1] = clamp(constraint->cached_lambda.data[1], -max_friction, max_friction);
     }
 
+    vecN_free(lambda);
     lambda = vecN_sub(constraint->cached_lambda, old_cached_lambda);
 
     // compute final impulses with direction and magnitude
     MatMN jacobian_t = matMN_transpose(jacobian);
     VecN impulses = matMN_mult_vec(jacobian_t, lambda);
-    /*if (num_contacts == 2)*/
-    /*vecN_print(impulses);*/
+
     body_apply_impulse_linear(a, VEC2(impulses.data[0], impulses.data[1]));
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));

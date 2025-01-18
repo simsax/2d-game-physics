@@ -283,6 +283,10 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass);
     constraint->lhs = matMN_mult_mat(j_inv_mass, jacobian_t);
 
+    // keep only diagonal terms
+    MAT_SET(constraint->lhs, 0, 1, 0.0f);
+    MAT_SET(constraint->lhs, 1, 0, 0.0f);
+
     matMN_free(jacobian_t);
     matMN_free(inv_mass);
     matMN_free(j_inv_mass);

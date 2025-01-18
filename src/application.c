@@ -78,7 +78,7 @@ void setup() {
     *static_box = body_create_box(200, 1000, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
-    static_box->friction = 0.2;
+    static_box->friction = 0.4;
     shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
 
     /*Body* static_ball = world_new_body(&world);*/
@@ -154,7 +154,7 @@ void input() {
             Body* new_box = world_new_body(&world);
             *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 1.0);
             new_box->restitution = 0.2f;
-            new_box->friction = 0.5f;
+            new_box->friction = 0.4f;
             /*body_set_texture(new_box, "./assets/crate.png");*/
 
             // polygon

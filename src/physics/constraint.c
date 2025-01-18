@@ -253,7 +253,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
         MAT_SET(jacobian, 1, 2, vec2_cross(ra, t) * -1.0f);
         MAT_SET(jacobian, 1, 3, t.x);
         MAT_SET(jacobian, 1, 4, t.y);
-        MAT_SET(jacobian, 1, 5, vec2_cross(rb, t));
+        MAT_SET(jacobian, 1, 5, vec2_cross(rb, t)); // TODO: this is the term causing weird bouncy behavior
     }
 
     // warm starting (apply cached lambda)
@@ -304,15 +304,23 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     float det_A = MAT_GET(A, 0, 0) * MAT_GET(A, 1, 1) - MAT_GET(A, 1, 0) * MAT_GET(A, 0, 1);
     /*matMN_print(A);*/
 
-    // TODO: now friction can't be exactly zero
     VecN lambda = vecN_create(2); // TODO: use vec2
-    if (det_A == 0.0f) { // TODO: is this comparison legit
-        vecN_zero(lambda);
+    if (constraint->friction) {
+        if (det_A == 0.0f) { // TODO: is this comparison legit
+            vecN_zero(lambda);
+        } else {
+            lambda.data[0] = (MAT_GET(A, 1, 1) * rhs.data[0] - MAT_GET(A, 0, 1) * rhs.data[1]) / det_A;
+            lambda.data[1] = (MAT_GET(A, 0, 0) * rhs.data[1] - MAT_GET(A, 1, 0) * rhs.data[0]) / det_A;
+        }
     } else {
-        lambda.data[0] = (MAT_GET(A, 1, 1) * rhs.data[0] - MAT_GET(A, 0, 1) * rhs.data[1]) / det_A;
-        lambda.data[1] = (MAT_GET(A, 0, 0) * rhs.data[1] - MAT_GET(A, 1, 0) * rhs.data[0]) / det_A;
+        // if there is no friction, only first term of lhs matrix is meaningful
+        float first_term = MAT_GET(A, 0, 0);
+        if (first_term != 0.0f) { // TODO: is this comparison legit
+            lambda.data[0] = rhs.data[0] / first_term;
+        }
     }
 
+    // clamp lambda
     VecN old_cached_lambda = constraint->cached_lambda;
     constraint->cached_lambda = vecN_add(constraint->cached_lambda, lambda);
     constraint->cached_lambda.data[0] = (constraint->cached_lambda.data[0] < 0.0f) ? 0.0f : constraint->cached_lambda.data[0];
@@ -344,9 +352,6 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
     vecN_free(lambda);
     vecN_free(impulses);
 }
-
-// TODO: impulse is too small?????
-
 
 void constraint_penetration_post_solve(PenetrationConstraint* constraint) {
 

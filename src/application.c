@@ -145,17 +145,17 @@ void input() {
             //circle
             Body* new_circle = world_new_body(&world);
             *new_circle = body_create_circle(30, mouse_coord.x, mouse_coord.y, 1.0);
-            new_circle->restitution = 0.8f;
+            new_circle->restitution = 0.9f;
             new_circle->friction = 1.0f;
-            body_set_texture(new_circle, "./assets/basketball.png");
+            /*body_set_texture(new_circle, "./assets/basketball.png");*/
         /*} else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {*/
         } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             // box
             Body* new_box = world_new_body(&world);
             *new_box = body_create_box(80, 80, mouse_coord.x, mouse_coord.y, 1.0);
             new_box->restitution = 0.2f;
-            new_box->friction = 1.0f;
-            body_set_texture(new_box, "./assets/crate.png");
+            new_box->friction = 0.5f;
+            /*body_set_texture(new_box, "./assets/crate.png");*/
 
             // polygon
             /*Body* new_poly = world_new_body(&world);*/

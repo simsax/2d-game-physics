@@ -29,9 +29,9 @@ typedef struct {
     int b_index; // index of body B in the world's bodies array
     Vec2 a_collision_point; // collision point of A in world's space
     Vec2 b_collision_point; // collision point of B in world's space
-    MatMN jacobian;
-    MatMN lhs; // J*M_inv*Jt
-    VecN cached_lambda;
+    float jacobian[2][6];
+    float lhs[2][2]; // J*M_inv*Jt
+    float cached_lambda[2]; // TODO: use Vec2
     float bias;
     Vec2 normal;
     float friction; // friction coefficient between the two penetrating bodies

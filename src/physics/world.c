@@ -34,12 +34,12 @@ void world_free(World* world) {
     for (int i = 0; i < world->joint_constraints.count; i++) {
         constraint_joint_free(&world->joint_constraints.items[i]);
     }
-    for (int i = 0; i < world->manifolds.count; i++) {
-        Manifold* m = &world->manifolds.items[i];
-        if (m->a_index != -1) {
-            manifold_free(&world->manifolds.items[i]);
-        }
-    }
+    /*for (int i = 0; i < world->manifolds.count; i++) {*/
+    /*    Manifold* m = &world->manifolds.items[i];*/
+    /*    if (m->a_index != -1) {*/
+    /*        manifold_free(&world->manifolds.items[i]);*/
+    /*    }*/
+    /*}*/
     DA_FREE(&world->bodies);
     DA_FREE(&world->joint_constraints);
     DA_FREE(&world->manifolds);

@@ -9,8 +9,6 @@ typedef struct {
     float *data;
 } MatMN;
 
-typedef struct Arena Arena;
-
 #define MAT_GET(mat, i, j) ((mat).data[(i) * (mat).N + (j)])
 #define MAT_SET(mat, i, j, val) ((mat).data[(i) * (mat).N + (j)] = (val))
 

@@ -40,9 +40,9 @@ typedef struct {
     (((xs)->count >= (xs)->capacity) ?                                                  \
      ((xs)->capacity = ((xs)->capacity == 0 ? START_CAPACITY : (xs)->capacity * 2),     \
       (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items)),        \
-      ((xs)->items == NULL ? exit(69) : NULL)                                           \
+      ((xs)->items == NULL ? exit(69) : (void) 0)                                       \
       ) :                                                                               \
-      NULL,                                                                             \
+      (void) 0,                                                                         \
       &((xs)->items[(xs)->count++]))
 
 #define DA_NULL { .capacity = 0, .count = 0, .items = NULL }

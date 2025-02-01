@@ -56,7 +56,7 @@ void draw_fill_rect(int x, int y, int width, int height, uint32_t color) {
 }
 
 void draw_polygon(int x, int y, Vec2Array vertices, uint32_t color) {
-    for (int i = 0; i < vertices.count; i++) {
+    for (uint32_t i = 0; i < vertices.count; i++) {
         int curr_index = i;
         int next_index = (i + 1) % vertices.count;
         DrawLine(
@@ -77,9 +77,9 @@ void draw_fill_polygon(int x, int y, Vec2Array vertices, uint32_t color) {
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
         // iterate in reverse order because of backface culling
-        for (int i = vertices.count - 1; i >= 0; i--)
+        for (int i = (int)vertices.count - 1; i >= 0; i--)
         {
-            int next_index = i > 0 ? (i - 1) : (vertices.count - 1);
+            int next_index = i > 0 ? (i - 1) : ((int)vertices.count - 1);
             rlVertex2f(x, y); // center
             rlVertex2f(vertices.items[i].x, vertices.items[i].y); // cur vertex
             rlVertex2f(vertices.items[next_index].x, vertices.items[next_index].y); // next vertex

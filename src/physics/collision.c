@@ -5,7 +5,7 @@
 #include <float.h>
 #include <string.h>
 
-bool collision_iscolliding(Body* a, Body* b, int a_index, int b_index, Contact* contacts, int* num_contacts) {
+bool collision_iscolliding(Body* a, Body* b, int a_index, int b_index, Contact* contacts, uint32_t* num_contacts) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
     bool b_is_circle = b->shape.type == CIRCLE_SHAPE;
     bool a_is_polygon = a->shape.type == POLYGON_SHAPE || a->shape.type == BOX_SHAPE;
@@ -26,7 +26,7 @@ bool collision_iscolliding(Body* a, Body* b, int a_index, int b_index, Contact* 
     return false;
 }
 
-bool collision_iscolliding_circlecircle(Body* a, Body* b, int a_index, int b_index, Contact* contacts, int* num_contacts) {
+bool collision_iscolliding_circlecircle(Body* a, Body* b, int a_index, int b_index, Contact* contacts, uint32_t* num_contacts) {
     *num_contacts = 1;
     CircleShape* a_shape = &a->shape.as.circle;
     CircleShape* b_shape = &b->shape.as.circle;
@@ -51,7 +51,7 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, int a_index, int b_ind
     return true;
 }
 
-bool collision_iscolliding_polygonpolygon(Body* a, Body* b, int a_index, int b_index, Contact* contacts, int* num_contacts) {
+bool collision_iscolliding_polygonpolygon(Body* a, Body* b, int a_index, int b_index, Contact* contacts, uint32_t* num_contacts) {
     PolygonShape* a_shape = &a->shape.as.polygon;
     PolygonShape* b_shape = &b->shape.as.polygon;
     int a_index_reference_edge, b_index_reference_edge;
@@ -64,7 +64,7 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, int a_index, int b_i
 
     PolygonShape* reference_shape;
     PolygonShape* incident_shape;
-    int index_reference_edge;
+    uint32_t index_reference_edge;
 
     if (ab_separation > ba_separation) {
         reference_shape = a_shape;
@@ -88,7 +88,7 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, int a_index, int b_i
     Vec2 contact_points[2] = { v0, v1 };
     Vec2 clipped_points[2] = { v0, v1 };
     // TODO: figure out for loop
-    for (int i = 0; i < reference_shape->world_vertices.count; i++) {
+    for (uint32_t i = 0; i < reference_shape->world_vertices.count; i++) {
         if (i == index_reference_edge)
             continue;
         Vec2 c0 = reference_shape->world_vertices.items[i];
@@ -128,7 +128,7 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, int a_index, int b_i
     return true;
 }
 
-bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, int polygon_index, int circle_index, Contact* contacts, int* num_contacts) {
+bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, int polygon_index, int circle_index, Contact* contacts, uint32_t* num_contacts) {
     // compute the nearest edge
     PolygonShape* polygon_shape = &polygon->shape.as.polygon;
     Vec2Array polygon_vertices = polygon_shape->world_vertices;
@@ -139,7 +139,7 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, int polygo
     Vec2 min_next_vertex;
     Vec2 min_normal;
     float distance_circle_edge = -FLT_MAX;
-    for (int i = 0; i < polygon_vertices.count; i++) {
+    for (uint32_t i = 0; i < polygon_vertices.count; i++) {
         Vec2 va = polygon_vertices.items[i];
         Vec2 edge = shape_polygon_edge_at(polygon_shape, i);
         Vec2 normal = vec2_normal(edge);

@@ -42,23 +42,24 @@ static bool debug = true;
 
 // private globals
 static World world;
-static Arena arena;
-static Vec2 mouse_coord = VEC2(0, 0);
+/*static Arena arena;*/
+static Vec2 mouse_coord = {0, 0};
 
 // ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
 // curate all of them (for ex. gravitation add textures, planets and stars)
 
-static Vec2Array make_regular_polygon(int num_vertices, int radius) {
-    Vec2Array vertices = DA_NULL;
-
-    float angle_offset = 2.0f * PI / num_vertices;
-    for (int i = 0; i < num_vertices; i++) {
-        float angle = i * angle_offset;
-        DA_APPEND(&vertices, VEC2(cos(angle) * radius, sin(angle) * radius));
-    }
-
-    return vertices;
-}
+/*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
+/*    Vec2Array vertices = DA_NULL;*/
+/**/
+/*    float angle_offset = 2.0f * PI / num_vertices;*/
+/*    for (int i = 0; i < num_vertices; i++) {*/
+/*        float angle = i * angle_offset;*/
+/*        DA_APPEND(&vertices, VEC2(cos(angle) * radius, sin(angle) * radius));*/
+/*    }*/
+/**/
+/*    return vertices;*/
+/*}*/
+/**/
 
 void setup() {
     open_window();
@@ -117,7 +118,7 @@ void input() {
         running = false;
     }
 
-    const float force = 50 * PIXELS_PER_METER;
+    /*const float force = 50 * PIXELS_PER_METER;*/
     if (IsKeyPressed(KEY_D)) {
         debug = !debug;
     }
@@ -211,7 +212,7 @@ void update() {
 void render(void) {
     if (!paused) {
         // bodies
-        for (int i = 0; i < world.bodies.count; i++) {
+        for (uint32_t i = 0; i < world.bodies.count; i++) {
             Body* body = &world.bodies.items[i];
             if (body->shape.type == CIRCLE_SHAPE) {
                 if (!debug && body->texture.id) {
@@ -244,7 +245,7 @@ void render(void) {
 
         // joints
         if (debug) {
-            for (int i = 0; i < world.joint_constraints.count; i++) {
+            for (uint32_t i = 0; i < world.joint_constraints.count; i++) {
                 JointConstraint* constraint = &world.joint_constraints.items[i];
                 Body* a = &world.bodies.items[constraint->a_index];
                 Vec2 anchor = body_local_to_world_space(a, constraint->a_point);

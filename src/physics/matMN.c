@@ -9,7 +9,13 @@
 // TODO: compare with cglm
 
 MatMN matMN_create(int num_rows, int num_cols, Arena* arena) {
-    float *data = arena_alloc(arena, sizeof(float) * num_rows * num_cols);
+    float* data = NULL;
+    // TODO: hack to compile my code
+    if (arena != NULL) {
+        data = arena_alloc(arena, sizeof(float) * num_rows * num_cols);
+    } else {
+        data = malloc(sizeof(float) * num_rows * num_cols);
+    }
     if (data == NULL) {
         printf("ERROR: Mem allocation failed, quitting.\n");
         exit(1);

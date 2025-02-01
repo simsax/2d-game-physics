@@ -52,8 +52,8 @@ JointConstraint constraint_joint_create(
         World* world, int a_index, int b_index, Vec2 anchor_point) {
     Body* a = &world->bodies.items[a_index];
     Body* b = &world->bodies.items[b_index];
-    MatMN jacobian = matMN_create(1, 6, &world->arena);
-    VecN lambda = vecN_create(1, &world->arena);
+    MatMN jacobian = matMN_create(1, 6, NULL);
+    VecN lambda = vecN_create(1, NULL);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (JointConstraint) {
@@ -80,9 +80,11 @@ PenetrationConstraint constraint_penetration_create(
 }
 
 void constraint_joint_free(JointConstraint* constraint) {
+    (void) constraint;
 }
 
 void constraint_penetration_free(PenetrationConstraint* constraint) {
+    (void) constraint;
 }
 
 // [ 1/ma  0     0     0     0     0 ]
@@ -94,7 +96,7 @@ void constraint_penetration_free(PenetrationConstraint* constraint) {
 MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    MatMN inv_mass = matMN_create(6, 6, &constraint->world->arena);
+    MatMN inv_mass = matMN_create(6, 6, NULL);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
     MAT_SET(inv_mass, 1, 1, a->inv_mass);
@@ -108,7 +110,7 @@ MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
 MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    MatMN inv_mass = matMN_create(6, 6, &constraint->world->arena);
+    MatMN inv_mass = matMN_create(6, 6, NULL);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
     MAT_SET(inv_mass, 1, 1, a->inv_mass);
@@ -135,7 +137,7 @@ void constraint_penetration_get_inv_mass_static(PenetrationConstraint* constrain
 VecN constraint_joint_get_velocities(JointConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    VecN v = vecN_create(6, &constraint->world->arena);
+    VecN v = vecN_create(6, NULL);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
     v.data[2] = a->angular_velocity;
@@ -148,7 +150,7 @@ VecN constraint_joint_get_velocities(JointConstraint* constraint) {
 VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint) {
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
-    VecN v = vecN_create(6, &constraint->world->arena);
+    VecN v = vecN_create(6, NULL);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
     v.data[2] = a->angular_velocity;
@@ -170,7 +172,8 @@ static void constraint_penetration_get_velocities_static(PenetrationConstraint* 
 }
 
 void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
-    Arena* arena = &constraint->world->arena;
+    // TODO: temporary hack
+    Arena* arena = NULL;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
 
@@ -219,7 +222,7 @@ void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
 }
 
 void constraint_joint_solve(JointConstraint* constraint) {
-    Arena* arena = &constraint->world->arena;
+    Arena* arena = NULL;
     Body* a = &constraint->world->bodies.items[constraint->a_index];
     Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
@@ -247,11 +250,13 @@ void constraint_joint_solve(JointConstraint* constraint) {
     body_apply_impulse_angular(a, impulses.data[2]);
     body_apply_impulse_linear(b, VEC2(impulses.data[3], impulses.data[4]));
     body_apply_impulse_angular(b, impulses.data[5]);
+
+    vecN_free(old_cached_lambda);
 }
 
 
 void constraint_joint_post_solve(JointConstraint* constraint) {
-
+    (void) constraint;
 }
 
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float dt) {
@@ -398,6 +403,6 @@ void constraint_penetration_solve(PenetrationConstraint* constraint) {
 }
 
 void constraint_penetration_post_solve(PenetrationConstraint* constraint) {
-
+    (void) constraint;
 }
 

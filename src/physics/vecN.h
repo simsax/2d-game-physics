@@ -1,12 +1,12 @@
 #ifndef VECN_H
 #define VECN_H
 
-typedef struct {
+#include "memory.h"
+
+typedef struct VecN {
     int N;
     float* data;
 } VecN;
-
-typedef struct Arena Arena;
 
 VecN vecN_create(int length, Arena* arena);
 void vecN_free(VecN vec);

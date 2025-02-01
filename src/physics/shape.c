@@ -14,7 +14,7 @@ Shape shape_create_polygon(Vec2Array vertices) {
     Vec2Array local_vertices = DA_NULL;
     Vec2Array world_vertices = DA_NULL;
 
-    for (int i = 0; i < vertices.count; i++) {
+    for (uint32_t i = 0; i < vertices.count; i++) {
         DA_APPEND(&local_vertices, vertices.items[i]);
         DA_APPEND(&world_vertices, vertices.items[i]);
     }
@@ -87,7 +87,7 @@ void shape_update_vertices(Shape* shape, float angle, Vec2 position) {
         return;
     PolygonShape* polygon_shape = &shape->as.polygon;
     // loop over all vertices and transform from local to world space
-    for (int i = 0; i < polygon_shape->local_vertices.count; i++) {
+    for (uint32_t i = 0; i < polygon_shape->local_vertices.count; i++) {
         // first rotate, then translate
         polygon_shape->world_vertices.items[i] = vec2_rotate(polygon_shape->local_vertices.items[i], angle);
         polygon_shape->world_vertices.items[i] = vec2_add(polygon_shape->world_vertices.items[i], position);
@@ -105,14 +105,14 @@ Vec2 shape_polygon_edge_at(PolygonShape* shape, int index) {
 float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, int* index_reference_edge) {
     float separation = -FLT_MAX; // -inf
 
-    for (int i = 0; i < a->world_vertices.count; i++) {
+    for (uint32_t i = 0; i < a->world_vertices.count; i++) {
         Vec2 va = a->world_vertices.items[i];
         Vec2 edge = shape_polygon_edge_at(a, i);
         Vec2 normal = vec2_normal(edge);
 
         float min_separation = FLT_MAX;
         /*Vec2 min_vertex;*/
-        for (int j = 0; j < b->world_vertices.count; j++) {
+        for (uint32_t j = 0; j < b->world_vertices.count; j++) {
             Vec2 vb = b->world_vertices.items[j];
             Vec2 va_vb = vec2_sub(vb, va); // vector from va to vb
             float proj = vec2_dot(va_vb, normal);
@@ -138,7 +138,7 @@ float shape_polygon_find_min_separation(PolygonShape* a, PolygonShape* b, int* i
 int shape_polygon_find_incident_edge_index(PolygonShape* reference, Vec2 normal) {
     float min_proj = FLT_MAX;
     int incident_edge = -1;
-    for (int i = 0; i < reference->world_vertices.count; i++) {
+    for (uint32_t i = 0; i < reference->world_vertices.count; i++) {
         Vec2 edge = shape_polygon_edge_at(reference, i);
         Vec2 edge_normal = vec2_normal(edge);
 

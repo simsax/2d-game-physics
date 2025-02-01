@@ -3,7 +3,7 @@ INCDIRS = ./src
 CODEDIRS = ./src ./src/physics
 BUILD_DIR = ./build
 CC = cc
-CFLAGS = -std=c11 -Wall -Wextra -pedantic -MP -MMD
+CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -MP -MMD
 LDLIBS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
 
 all: debug

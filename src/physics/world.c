@@ -5,22 +5,18 @@
 #include "collision.h"
 #include "manifold.h"
 #include "utils.h"
-#include "memory.h"
 
 #define SOLVE_ITERATIONS 10
 #define INITIAL_SIZE (1024 * 1024) // 1 MB
 
 World world_create(float gravity) {
-    Arena arena;
-    arena_init(&arena, INITIAL_SIZE);
     return (World) {
         .gravity = -gravity, // y points down in screen space
-        .arena = arena
     };
 }
 
 void world_free(World* world) {
-    for (int i = 0; i < world->bodies.count; i++) {
+    for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
         bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
         if (is_polygon) {
@@ -31,10 +27,10 @@ void world_free(World* world) {
             UnloadTexture(body->texture);
         }
     }
-    for (int i = 0; i < world->joint_constraints.count; i++) {
+    for (uint32_t i = 0; i < world->joint_constraints.count; i++) {
         constraint_joint_free(&world->joint_constraints.items[i]);
     }
-    /*for (int i = 0; i < world->manifolds.count; i++) {*/
+    /*for (uint32_t i = 0; i < world->manifolds.count; i++) {*/
     /*    Manifold* m = &world->manifolds.items[i];*/
     /*    if (m->a_index != -1) {*/
     /*        manifold_free(&world->manifolds.items[i]);*/
@@ -64,7 +60,7 @@ void world_add_torque(World* world, float torque) {
 }
 
 Manifold* world_manifold_next(World* world) {
-    for (int i = 0; i < world->manifolds.count; i++) {
+    for (uint32_t i = 0; i < world->manifolds.count; i++) {
         Manifold* m = &world->manifolds.items[i];
         if (m->a_index == -1) {
             return m;
@@ -74,7 +70,7 @@ Manifold* world_manifold_next(World* world) {
 }
 
 Manifold* world_manifold_find(World* world, int a_index, int b_index) {
-    for (int i = 0; i < world->manifolds.count; i++) {
+    for (uint32_t i = 0; i < world->manifolds.count; i++) {
         Manifold* m = &world->manifolds.items[i];
         if (m->a_index == a_index && m->b_index == b_index)
             return m;
@@ -84,7 +80,7 @@ Manifold* world_manifold_find(World* world, int a_index, int b_index) {
 
 void world_update(World* world, float dt) {
     // apply all the forces
-    for (int i = 0; i < world->bodies.count; i++) {
+    for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
 
         // add weight force
@@ -93,36 +89,36 @@ void world_update(World* world, float dt) {
         body_add_force(body, weight);
 
         // add forces
-        for (int f = 0;  f < world->forces.count; f++) {
+        for (uint32_t f = 0;  f < world->forces.count; f++) {
             body_add_force(body, world->forces.items[f]);
         }
 
         // add torques
-        for (int t = 0;  t < world->torques.count; t++) {
+        for (uint32_t t = 0;  t < world->torques.count; t++) {
             body_add_torque(body, world->torques.items[t]);
         }
     }
 
     // integrate all the forces
-    for (int i = 0; i < world->bodies.count; i++) {
+    for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
         body_integrate_forces(body, dt);
     }
 
     // flag all the manifolds to be expired
-    for (int i = 0; i < world->manifolds.count; i++) {
+    for (uint32_t i = 0; i < world->manifolds.count; i++) {
         world->manifolds.items[i].expired = true;
     }
 
     // check collisions
     // TODO: warm starting does not work
     bool warm_start = false;
-    for (int i = 0; i < world->bodies.count - 1; i++) {
-        for (int j = i + 1; j < world->bodies.count; j++) {
+    for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
+        for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
             Body* b = &world->bodies.items[j];
             Contact contacts[2];
-            int num_contacts = 0;
+            uint32_t num_contacts = 0;
             if (collision_iscolliding(a, b, i, j, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
                 Manifold* existing_manifold = world_manifold_find(world, i, j);
@@ -142,7 +138,7 @@ void world_update(World* world, float dt) {
                 }
                 if (new_manifold != NULL) {
                     *new_manifold = manifold_create(num_contacts, i, j);
-                    for (int c = 0; c < num_contacts; c++) {
+                    for (uint32_t c = 0; c < num_contacts; c++) {
                         // draw collision points and normal
                         /*draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
                         /*draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
@@ -159,7 +155,7 @@ void world_update(World* world, float dt) {
     }
 
     // delete expired manifold
-    for (int i = 0; i < world->manifolds.count; i++) {
+    for (uint32_t i = 0; i < world->manifolds.count; i++) {
         Manifold* manifold = &world->manifolds.items[i];
         if (manifold->expired && manifold->a_index != -1) {
             manifold_free(manifold);
@@ -169,32 +165,32 @@ void world_update(World* world, float dt) {
     }
 
     // solve all constraints
-    for (int c = 0; c < world->joint_constraints.count; c++) {
+    for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
         constraint_joint_pre_solve(&world->joint_constraints.items[c], dt);
     }
-    for (int c = 0; c < world->manifolds.count; c++) {
+    for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1)
             manifold_pre_solve(&world->manifolds.items[c], dt);
     }
-    for (int i = 0; i < SOLVE_ITERATIONS; i++) {
-        for (int c = 0; c < world->joint_constraints.count; c++) {
+    for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
+        for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
             constraint_joint_solve(&world->joint_constraints.items[c]);
         }
-        for (int c = 0; c < world->manifolds.count; c++) {
+        for (uint32_t c = 0; c < world->manifolds.count; c++) {
             if (world->manifolds.items[c].a_index != -1)
                 manifold_solve(&world->manifolds.items[c]);
         }
     }
-    for (int c = 0; c < world->joint_constraints.count; c++) {
+    for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
         constraint_joint_post_solve(&world->joint_constraints.items[c]);
     }
-    for (int c = 0; c < world->manifolds.count; c++) {
+    for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1)
             manifold_post_solve(&world->manifolds.items[c]);
     }
 
     // integrate all velocities
-    for (int i = 0; i < world->bodies.count; i++) {
+    for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
         body_integrate_velocities(body, dt);
     }

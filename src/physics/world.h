@@ -14,7 +14,6 @@ typedef struct World {
     ManifoldArray manifolds;
     Vec2Array forces;
     FloatArray torques;
-    Arena arena;
 } World;
 
 World world_create(float gravity);

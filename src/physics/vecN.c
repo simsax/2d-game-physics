@@ -7,7 +7,12 @@
 
 
 VecN vecN_create(int length, Arena* arena) {
-    float* data = arena_alloc(arena, length * sizeof(float));
+    float* data = NULL;
+    if (arena != NULL) {
+        data = arena_alloc(arena, length * sizeof(float));
+    } else {
+        data = malloc(length * sizeof(float));
+    }
     if (data == NULL) {
         printf("ERROR: Mem allocation failed, quitting.\n");
         exit(1);

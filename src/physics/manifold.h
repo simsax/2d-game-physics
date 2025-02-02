@@ -24,11 +24,12 @@ typedef struct {
     Manifold* items;
 } ManifoldArray;
 
+struct World;
+
 Manifold manifold_create(int num_contacts, int a_index, int b_index);
 bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int num_contacts);
-void manifold_free(Manifold* manifold);
-void manifold_pre_solve(Manifold* manifold, float dt);
-void manifold_solve(Manifold* manifold);
+void manifold_pre_solve(Manifold* manifold, Body* a, Body* b, float dt);
+void manifold_solve(Manifold* manifold, Body* a, Body* b);
 void manifold_post_solve(Manifold* manifold);
 
 #endif // MANIFOLD_H

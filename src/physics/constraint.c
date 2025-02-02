@@ -3,10 +3,10 @@
 #include "matMN.h"
 #include "vec2.h"
 #include "vecN.h"
-#include "world.h"
 #include "utils.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 
 // TODO: move this out
 
@@ -49,15 +49,12 @@ static void mat_mult_mat(int rows_a, int cols_a, float a[rows_a][cols_a],
 }
 
 JointConstraint constraint_joint_create(
-        World* world, int a_index, int b_index, Vec2 anchor_point) {
-    Body* a = &world->bodies.items[a_index];
-    Body* b = &world->bodies.items[b_index];
+        Body* a, Body* b, int a_index, int b_index, Vec2 anchor_point) {
     MatMN jacobian = matMN_create(1, 6, NULL);
     VecN lambda = vecN_create(1, NULL);
     matMN_zero(jacobian);
     vecN_zero(lambda);
     return (JointConstraint) {
-        .world = world,
         .a_index = a_index,
         .b_index = b_index,
         .a_point = body_world_to_local_space(a, anchor_point),
@@ -68,9 +65,8 @@ JointConstraint constraint_joint_create(
 }
 
 PenetrationConstraint constraint_penetration_create(
-        World* world, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal) {
+        int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal) {
     return (PenetrationConstraint) {
-        .world = world,
         .a_index = a_index,
         .b_index = b_index,
         .a_collision_point = a_collision_point,
@@ -83,19 +79,13 @@ void constraint_joint_free(JointConstraint* constraint) {
     (void) constraint;
 }
 
-void constraint_penetration_free(PenetrationConstraint* constraint) {
-    (void) constraint;
-}
-
 // [ 1/ma  0     0     0     0     0 ]
 // [ 0     1/ma  0     0     0     0 ]
 // [ 0     0     1/Ia  0     0     0 ]
 // [ 0     0     0     1/mb  0     0 ]
 // [ 0     0     0     0     1/mb  0 ]
 // [ 0     0     0     0     0     1/Ib ]
-MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
+static MatMN constraint_joint_get_inv_mass(Body* a, Body* b) {
     MatMN inv_mass = matMN_create(6, 6, NULL);
     matMN_zero(inv_mass);
     MAT_SET(inv_mass, 0, 0, a->inv_mass);
@@ -107,23 +97,7 @@ MatMN constraint_joint_get_inv_mass(JointConstraint* constraint) {
     return inv_mass;
 }
 
-MatMN constraint_penetration_get_inv_mass(PenetrationConstraint* constraint) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
-    MatMN inv_mass = matMN_create(6, 6, NULL);
-    matMN_zero(inv_mass);
-    MAT_SET(inv_mass, 0, 0, a->inv_mass);
-    MAT_SET(inv_mass, 1, 1, a->inv_mass);
-    MAT_SET(inv_mass, 2, 2, a->inv_I);
-    MAT_SET(inv_mass, 3, 3, b->inv_mass);
-    MAT_SET(inv_mass, 4, 4, b->inv_mass);
-    MAT_SET(inv_mass, 5, 5, b->inv_I);
-    return inv_mass;
-}
-
-void constraint_penetration_get_inv_mass_static(PenetrationConstraint* constraint, float inv_mass[6][6]) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
+static void constraint_penetration_get_inv_mass(Body* a, Body* b, float inv_mass[6][6]) {
     memset(inv_mass, 0, 36 * sizeof(float));
     inv_mass[0][0] = a->inv_mass;
     inv_mass[1][1] = a->inv_mass;
@@ -134,9 +108,7 @@ void constraint_penetration_get_inv_mass_static(PenetrationConstraint* constrain
 }
 
 // [va.x, va.y, ωa, vb.x, vb.y, ωb]
-VecN constraint_joint_get_velocities(JointConstraint* constraint) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
+static VecN constraint_joint_get_velocities(Body* a, Body* b) {
     VecN v = vecN_create(6, NULL);
     v.data[0] = a->velocity.x;
     v.data[1] = a->velocity.y;
@@ -147,22 +119,7 @@ VecN constraint_joint_get_velocities(JointConstraint* constraint) {
     return v;
 }
 
-VecN constraint_penetration_get_velocities(PenetrationConstraint* constraint) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
-    VecN v = vecN_create(6, NULL);
-    v.data[0] = a->velocity.x;
-    v.data[1] = a->velocity.y;
-    v.data[2] = a->angular_velocity;
-    v.data[3] = b->velocity.x;
-    v.data[4] = b->velocity.y;
-    v.data[5] = b->angular_velocity;
-    return v;
-}
-
-static void constraint_penetration_get_velocities_static(PenetrationConstraint* constraint, float velocities[]) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
+static void constraint_penetration_get_velocities(Body* a, Body* b, float velocities[]) {
     velocities[0] = a->velocity.x;
     velocities[1] = a->velocity.y;
     velocities[2] = a->angular_velocity;
@@ -171,11 +128,9 @@ static void constraint_penetration_get_velocities_static(PenetrationConstraint* 
     velocities[5] = b->angular_velocity;
 }
 
-void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
+void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt) {
     // TODO: temporary hack
     Arena* arena = NULL;
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
 
     // get anchor point position in world space
     Vec2 pa = body_local_to_world_space(a, constraint->a_point);
@@ -221,18 +176,16 @@ void constraint_joint_pre_solve(JointConstraint* constraint, float dt) {
     constraint->bias = (beta / dt) * C;
 }
 
-void constraint_joint_solve(JointConstraint* constraint) {
+void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b) {
     Arena* arena = NULL;
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
     MatMN jacobian = constraint->jacobian;
-    MatMN inv_mass = constraint_joint_get_inv_mass(constraint);
+    MatMN inv_mass = constraint_joint_get_inv_mass(a, b);
     MatMN jacobian_t = matMN_transpose(jacobian, arena);
     MatMN j_inv_mass = matMN_mult_mat(jacobian, inv_mass, arena);
     MatMN lhs = matMN_mult_mat(j_inv_mass, jacobian_t, arena); // A
     // TODO: lhs in the presolve (member variable of struct)
 
-    VecN velocities = constraint_joint_get_velocities(constraint);
+    VecN velocities = constraint_joint_get_velocities(a, b);
     VecN j_v = matMN_mult_vec(jacobian, velocities, arena);
     VecN rhs = vecN_mult(j_v, -1.0f, arena); // B
     rhs.data[0] -= constraint->bias;
@@ -259,10 +212,7 @@ void constraint_joint_post_solve(JointConstraint* constraint) {
     (void) constraint;
 }
 
-void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float dt) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
-
+void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt) {
     // get collision points
     Vec2 pa = constraint->a_collision_point;
     Vec2 pb = constraint->b_collision_point;
@@ -327,7 +277,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
     constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
 
     float inv_mass[6][6];
-    constraint_penetration_get_inv_mass_static(constraint, inv_mass);
+    constraint_penetration_get_inv_mass(a, b, inv_mass);
     float j_inv_mass[2][6];
     mat_mult_mat(2, 6, constraint->jacobian, 6, 6, inv_mass, j_inv_mass);
     mat_mult_mat(2, 6, j_inv_mass, 6, 2, jacobian_t, constraint->lhs);
@@ -338,13 +288,10 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, float d
 }
 
 // TODO: circles keep rotating forever
-void constraint_penetration_solve(PenetrationConstraint* constraint) {
-    Body* a = &constraint->world->bodies.items[constraint->a_index];
-    Body* b = &constraint->world->bodies.items[constraint->b_index];
-
+void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Body* b) {
     float velocities[6];
     float rhs[2];
-    constraint_penetration_get_velocities_static(constraint, velocities);
+    constraint_penetration_get_velocities(a, b, velocities);
     mat_mult_vec(2, 6, constraint->jacobian, velocities, rhs);
     // B (1x2) rhs = j_v * -1
     for (int i = 0; i < 2; i++)

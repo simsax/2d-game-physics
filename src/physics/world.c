@@ -130,7 +130,6 @@ void world_update(World* world, float dt) {
                     existing_manifold->expired = false;
                     if (!warm_start || !manifold_contact_almost_equal(existing_manifold, contacts, num_contacts)) {
                         // overwrite existing manifold
-                        manifold_free(existing_manifold);
                         new_manifold = existing_manifold;
                     }
                     // else, do nothing, we re-use the manifold in the next frame
@@ -147,7 +146,7 @@ void world_update(World* world, float dt) {
                         
                         // create new penetration constraint
                         new_manifold->constraints[c] = constraint_penetration_create(
-                                world, contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal);
+                                contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal);
                     }
                 }
             }
@@ -158,7 +157,6 @@ void world_update(World* world, float dt) {
     for (uint32_t i = 0; i < world->manifolds.count; i++) {
         Manifold* manifold = &world->manifolds.items[i];
         if (manifold->expired && manifold->a_index != -1) {
-            manifold_free(manifold);
             // set -1 as special value for dead manifolds
             manifold->a_index = -1;
         }
@@ -166,19 +164,33 @@ void world_update(World* world, float dt) {
 
     // solve all constraints
     for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
-        constraint_joint_pre_solve(&world->joint_constraints.items[c], dt);
+        JointConstraint* constraint = &world->joint_constraints.items[c];
+        Body* a = &world->bodies.items[constraint->a_index];
+        Body* b = &world->bodies.items[constraint->b_index];
+        constraint_joint_pre_solve(constraint, a, b, dt);
     }
     for (uint32_t c = 0; c < world->manifolds.count; c++) {
-        if (world->manifolds.items[c].a_index != -1)
-            manifold_pre_solve(&world->manifolds.items[c], dt);
+        if (world->manifolds.items[c].a_index != -1) {
+            Manifold* manifold = &world->manifolds.items[c];
+            Body* a = &world->bodies.items[manifold->a_index];
+            Body* b = &world->bodies.items[manifold->b_index];
+            manifold_pre_solve(manifold, a, b, dt);
+        }
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
         for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
-            constraint_joint_solve(&world->joint_constraints.items[c]);
+            JointConstraint* constraint = &world->joint_constraints.items[c];
+            Body* a = &world->bodies.items[constraint->a_index];
+            Body* b = &world->bodies.items[constraint->b_index];
+            constraint_joint_solve(constraint, a, b);
         }
         for (uint32_t c = 0; c < world->manifolds.count; c++) {
-            if (world->manifolds.items[c].a_index != -1)
-                manifold_solve(&world->manifolds.items[c]);
+            if (world->manifolds.items[c].a_index != -1) {
+                Manifold* manifold = &world->manifolds.items[c];
+                Body* a = &world->bodies.items[manifold->a_index];
+                Body* b = &world->bodies.items[manifold->b_index];
+                manifold_solve(manifold, a, b);
+            }
         }
     }
     for (uint32_t c = 0; c < world->joint_constraints.count; c++) {

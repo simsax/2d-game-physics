@@ -3,7 +3,32 @@ INCDIRS = ./src
 CODEDIRS = ./src ./src/physics
 BUILD_DIR = ./build
 CC = cc
-CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -MP -MMD
+CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -pedantic-errors -MP -MMD
+
+# https://www.reddit.com/r/C_Programming/comments/ievcev/what_is_the_most_effective_set_of_gcc_warning/
+# CFLAGS += -Waggregate-return
+# CFLAGS += -Wbad-function-cast
+# CFLAGS += -Wcast-align
+# CFLAGS += -Wcast-qual
+# CFLAGS += -Wdeclaration-after-statement
+# CFLAGS += -Wfloat-equal
+# CFLAGS += -Wformat=2
+# CFLAGS += -Wlogical-op
+# CFLAGS += -Wmissing-declarations
+# CFLAGS += -Wmissing-include-dirs
+# CFLAGS += -Wmissing-prototypes
+# CFLAGS += -Wnested-externs
+# CFLAGS += -Wpointer-arith
+# CFLAGS += -Wredundant-decls
+# CFLAGS += -Wsequence-point
+# CFLAGS += -Wshadow
+# CFLAGS += -Wstrict-prototypes
+# CFLAGS += -Wswitch
+# CFLAGS += -Wundef
+# CFLAGS += -Wunreachable-code
+# CFLAGS += -Wunused-but-set-parameter
+# CFLAGS += -Wwrite-strings
+
 LDLIBS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
 
 all: debug

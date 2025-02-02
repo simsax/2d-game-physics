@@ -27,9 +27,9 @@ static double prev_time_fps = 0.0;
 #endif
 
 // palette https://coolors.co/1a0f0d-392426-6b2c2e-925d5e-5d1816-251a1a-150705
-#define COLOR_BACKGROUND 0x110604FF
-#define COLOR_CIRCLE 0x6B2C2EFF
-#define COLOR_BOX 0x925D5EFF
+#define COLOR_BACKGROUND 0x3C3836FF
+#define COLOR_CIRCLE 0xB8BB26FF
+#define COLOR_BOX 0xFB4934FF
 
 // starts tanking at 900 boxes
 // 30 fps with 1200 boxes

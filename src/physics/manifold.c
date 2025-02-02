@@ -1,6 +1,5 @@
 #include "manifold.h"
 #include "vec2.h"
-#include <stdio.h>
 
 Manifold manifold_create(int num_contacts, int a_index, int b_index) {
     return (Manifold) {
@@ -9,12 +8,6 @@ Manifold manifold_create(int num_contacts, int a_index, int b_index) {
         .num_contacts = num_contacts,
         .expired = false
     };
-}
-
-void manifold_free(Manifold* manifold) {
-    for (int i = 0; i < manifold->num_contacts; i++) {
-        constraint_penetration_free(&manifold->constraints[i]);
-    }
 }
 
 bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int num_contacts) {
@@ -36,17 +29,17 @@ bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int nu
     return true;
 }
 
-void manifold_pre_solve(Manifold* manifold, float dt) {
+void manifold_pre_solve(Manifold* manifold, Body* a, Body* b, float dt) {
     for (int i = 0; i < manifold->num_contacts; i++) {
-        constraint_penetration_pre_solve(&manifold->constraints[i], dt);
+        constraint_penetration_pre_solve(&manifold->constraints[i], a, b, dt);
     }
 }
 
-void manifold_solve(Manifold* manifold) {
+void manifold_solve(Manifold* manifold, Body* a, Body* b) {
     /*if (manifold->num_contacts == 2)*/
         /*printf("Manifold %d %d\n", manifold->a_index, manifold->b_index);*/
     for (int i = 0; i < manifold->num_contacts; i++) {
-        constraint_penetration_solve(&manifold->constraints[i]);
+        constraint_penetration_solve(&manifold->constraints[i], a, b);
     }
     /*if (manifold->num_contacts == 2)*/
     /*    printf("----------\n");*/

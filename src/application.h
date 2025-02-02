@@ -3,11 +3,11 @@
 
 #include <stdbool.h>
 
-void setup();
-void destroy();
-void input();
-void update();
-void render();
+void setup(void);
+void destroy(void);
+void input(void);
+void update(void);
+void render(void);
 
 extern bool running;
 

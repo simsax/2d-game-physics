@@ -10,11 +10,11 @@
 #define WINDOW_HEIGHT 1080
 #define WINDOW_WIDTH 1920
 
-void open_window();
-void close_window();
+void open_window(void);
+void close_window(void);
 void clear_screen(uint32_t color);
-void begin_frame();
-void end_frame();
+void begin_frame(void);
+void end_frame(void);
 void draw_line(int x0, int y0, int x1, int y1, uint32_t color);
 void draw_line_thick(int x0, int y0, int x1, int y1, uint32_t color, int thickness);
 void draw_circle(int x, int y, int radius, uint32_t color);

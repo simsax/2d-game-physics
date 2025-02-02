@@ -6,7 +6,7 @@
 #include "manifold.h"
 #include "utils.h"
 
-#define SOLVE_ITERATIONS 10
+#define SOLVE_ITERATIONS 5
 #define INITIAL_SIZE (1024 * 1024) // 1 MB
 
 World world_create(float gravity) {
@@ -172,9 +172,7 @@ void world_update(World* world, float dt) {
     for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1) {
             Manifold* manifold = &world->manifolds.items[c];
-            Body* a = &world->bodies.items[manifold->a_index];
-            Body* b = &world->bodies.items[manifold->b_index];
-            manifold_pre_solve(manifold, a, b, dt);
+            manifold_pre_solve(manifold, world->bodies, dt);
         }
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
@@ -187,9 +185,7 @@ void world_update(World* world, float dt) {
         for (uint32_t c = 0; c < world->manifolds.count; c++) {
             if (world->manifolds.items[c].a_index != -1) {
                 Manifold* manifold = &world->manifolds.items[c];
-                Body* a = &world->bodies.items[manifold->a_index];
-                Body* b = &world->bodies.items[manifold->b_index];
-                manifold_solve(manifold, a, b);
+                manifold_solve(manifold, world->bodies);
             }
         }
     }

@@ -2,17 +2,12 @@
 
 #include "application.h"
 #include "graphics.h"
-#include "physics/array.h"
 #include "physics/constraint.h"
-#include "physics/force.h"
 #include "physics/body.h"
 #include "physics/shape.h"
 #include "physics/utils.h"
 #include "physics/vec2.h"
-#include "physics/collision.h"
-#include "physics/contact.h"
 #include "physics/world.h"
-#include "physics/memory.h"
 
 #include <stdint.h>
 #include <stdio.h>
@@ -22,14 +17,14 @@
 #if SHOW_FPS
 
 static int frame_count = 0;
-static double prev_time_fps = 0.0;
+static float prev_time_fps = 0.0f;
 
 #endif
 
 // palette https://coolors.co/1a0f0d-392426-6b2c2e-925d5e-5d1816-251a1a-150705
-#define COLOR_BACKGROUND 0x3C3836FF
+#define COLOR_BACKGROUND 0x282828FF
 #define COLOR_CIRCLE 0xB8BB26FF
-#define COLOR_BOX 0xFB4934FF
+#define COLOR_BOX 0xD3869BFF
 
 // starts tanking at 900 boxes
 // 30 fps with 1200 boxes
@@ -61,11 +56,11 @@ static Vec2 mouse_coord = {0, 0};
 /*}*/
 /**/
 
-void setup() {
+void setup(void) {
     open_window();
     running = true;
 
-    world = world_create(-9.8);
+    world = world_create(-9.8f);
 
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
@@ -108,12 +103,12 @@ void setup() {
     /**c = body_create_circle(100, x_center, y_center, 0.0);*/
 }
 
-void destroy() {
+void destroy(void) {
     world_free(&world);
     close_window();
 }
 
-void input() {
+void input(void) {
     if (WindowShouldClose() || IsKeyDown(KEY_ESCAPE)) {
         running = false;
     }
@@ -168,13 +163,13 @@ void input() {
 // TODO: zoom in and out with mouse wheel, ability to navigate the world
 // this should be outside the scope of the physics engine though
 
-void update() {
+void update(void) {
     begin_frame();
     // TODO: fix timestep
 
     static float prev_time = 0;
     // wait until target frame time is reached
-    float delta_time_prev_frame = GetTime() - prev_time;
+    float delta_time_prev_frame = (float)GetTime() - prev_time;
     float time_to_wait = SECS_PER_FRAME - delta_time_prev_frame;
     if (time_to_wait > 0) {
         WaitTime(time_to_wait);

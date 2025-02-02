@@ -4,11 +4,11 @@
 #include <raylib.h>
 #include "rlgl.h"
 
-void open_window() {
+void open_window(void) {
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "2d physics");
 }
 
-void close_window() {
+void close_window(void) {
     CloseWindow();
 }
 
@@ -16,11 +16,11 @@ void clear_screen(uint32_t color) {
     ClearBackground(GetColor(color));
 }
 
-void begin_frame() {
+void begin_frame(void) {
     BeginDrawing();
 }
 
-void end_frame() {
+void end_frame(void) {
     EndDrawing();
 }
 

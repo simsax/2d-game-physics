@@ -4,35 +4,38 @@ CODEDIRS = ./src ./src/physics
 BUILD_DIR = ./build
 CC = cc
 CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -pedantic-errors -MP -MMD
+CFLAGS += -Waggregate-return
+CFLAGS += -Wbad-function-cast
+CFLAGS += -Wcast-align
+CFLAGS += -Wcast-qual
+CFLAGS += -Wfloat-equal
+CFLAGS += -Wformat=2
+CFLAGS += -Wlogical-op
+CFLAGS += -Wmissing-declarations
+CFLAGS += -Wmissing-include-dirs
+CFLAGS += -Wmissing-prototypes
+CFLAGS += -Wnested-externs
+CFLAGS += -Wpointer-arith
+CFLAGS += -Wredundant-decls
+CFLAGS += -Wsequence-point
+CFLAGS += -Wshadow
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wswitch
+CFLAGS += -Wundef
+CFLAGS += -Wunreachable-code
+CFLAGS += -Wunused-but-set-parameter
+CFLAGS += -Wwrite-strings
+CFLAGS += -Wnull-dereference
+CFLAGS += -Wdouble-promotion
 
-# https://www.reddit.com/r/C_Programming/comments/ievcev/what_is_the_most_effective_set_of_gcc_warning/
-# CFLAGS += -Waggregate-return
-# CFLAGS += -Wbad-function-cast
-# CFLAGS += -Wcast-align
-# CFLAGS += -Wcast-qual
-# CFLAGS += -Wdeclaration-after-statement
-# CFLAGS += -Wfloat-equal
-# CFLAGS += -Wformat=2
-# CFLAGS += -Wlogical-op
-# CFLAGS += -Wmissing-declarations
-# CFLAGS += -Wmissing-include-dirs
-# CFLAGS += -Wmissing-prototypes
-# CFLAGS += -Wnested-externs
-# CFLAGS += -Wpointer-arith
-# CFLAGS += -Wredundant-decls
-# CFLAGS += -Wsequence-point
-# CFLAGS += -Wshadow
-# CFLAGS += -Wstrict-prototypes
-# CFLAGS += -Wswitch
-# CFLAGS += -Wundef
-# CFLAGS += -Wunreachable-code
-# CFLAGS += -Wunused-but-set-parameter
-# CFLAGS += -Wwrite-strings
+# when developing, turn this on
+# CFLAGS += -Wno-unused-function
 
-LDLIBS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
+LDFLAGS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
 
 all: debug
-debug: CFLAGS += -O0 -g
+debug: CFLAGS += -O0 -g3 -fsanitize=address,undefined -fsanitize-trap
+debug: LDFLAGS += -fsanitize=address
 debug: $(BUILD_DIR)/$(TARGET_EXE)
 release: CFLAGS += -O3 -DNDEBUG
 release: $(BUILD_DIR)/$(TARGET_EXE)
@@ -47,7 +50,7 @@ OBJS = $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS = $(OBJS:.o=.d)
 
 $(BUILD_DIR)/$(TARGET_EXE): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDLIBS)
+	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.c.o: %.c
 	mkdir -p $(dir $@)

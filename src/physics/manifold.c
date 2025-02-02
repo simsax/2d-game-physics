@@ -1,4 +1,5 @@
 #include "manifold.h"
+#include "constraint.h"
 #include "vec2.h"
 
 Manifold manifold_create(int num_contacts, int a_index, int b_index) {
@@ -29,17 +30,23 @@ bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int nu
     return true;
 }
 
-void manifold_pre_solve(Manifold* manifold, Body* a, Body* b, float dt) {
+void manifold_pre_solve(Manifold* manifold, BodyArray world_bodies, float dt) {
     for (int i = 0; i < manifold->num_contacts; i++) {
-        constraint_penetration_pre_solve(&manifold->constraints[i], a, b, dt);
+        PenetrationConstraint* constraint = &manifold->constraints[i];
+        Body* a = &world_bodies.items[constraint->a_index];
+        Body* b = &world_bodies.items[constraint->b_index];
+        constraint_penetration_pre_solve(constraint, a, b, dt);
     }
 }
 
-void manifold_solve(Manifold* manifold, Body* a, Body* b) {
+void manifold_solve(Manifold* manifold, BodyArray world_bodies) {
     /*if (manifold->num_contacts == 2)*/
         /*printf("Manifold %d %d\n", manifold->a_index, manifold->b_index);*/
     for (int i = 0; i < manifold->num_contacts; i++) {
-        constraint_penetration_solve(&manifold->constraints[i], a, b);
+        PenetrationConstraint* constraint = &manifold->constraints[i];
+        Body* a = &world_bodies.items[constraint->a_index];
+        Body* b = &world_bodies.items[constraint->b_index];
+        constraint_penetration_solve(constraint, a, b);
     }
     /*if (manifold->num_contacts == 2)*/
     /*    printf("----------\n");*/

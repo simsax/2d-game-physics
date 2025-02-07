@@ -1,6 +1,6 @@
 #include "application.h"
 
-void run() {
+static void run(void) {
     setup();
 
     while (running) {

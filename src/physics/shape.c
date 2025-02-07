@@ -3,32 +3,27 @@
 #include <float.h>
 #include <stdbool.h>
 
-Shape shape_create_circle(float radius) {
-    return (Shape) {
-        .type = CIRCLE_SHAPE,
-        .as.circle = (CircleShape) { .radius = radius }
-    };
+
+void shape_init_circle(Shape* shape, float radius) {
+    shape->type = CIRCLE_SHAPE;
+    shape->as.circle = (CircleShape) { .radius = radius };
 }
 
-Shape shape_create_polygon(Vec2Array vertices) {
-    Vec2Array local_vertices = DA_NULL;
+void shape_init_polygon(Shape* shape, Vec2Array local_vertices) {
     Vec2Array world_vertices = DA_NULL;
 
-    for (uint32_t i = 0; i < vertices.count; i++) {
-        DA_APPEND(&local_vertices, vertices.items[i]);
-        DA_APPEND(&world_vertices, vertices.items[i]);
+    for (uint32_t i = 0; i < local_vertices.count; i++) {
+        DA_APPEND(&world_vertices, local_vertices.items[i]);
     }
 
-    return (Shape) {
-        .type = POLYGON_SHAPE,
-        .as.polygon = (PolygonShape) {
-            .local_vertices = local_vertices,
-            .world_vertices = world_vertices,
-        }
+    shape->type = POLYGON_SHAPE;
+    shape->as.polygon = (PolygonShape) {
+        .local_vertices = local_vertices,
+        .world_vertices = world_vertices,
     };
 }
 
-Shape shape_create_box(float width, float height) {
+void shape_init_box(Shape* shape, float width, float height) {
     float half_width = width / 2.0f;
     float half_height = height / 2.0f;
 
@@ -46,16 +41,14 @@ Shape shape_create_box(float width, float height) {
     DA_APPEND(&world_vertices, VEC2(half_width, half_height));
     DA_APPEND(&world_vertices, VEC2(-half_width, half_height));
 
-    return (Shape) {
-        .type = BOX_SHAPE,
-        .as.box = (BoxShape) {
-            .polygon = (PolygonShape) { 
-                .local_vertices = local_vertices,
-                .world_vertices = world_vertices,
-            },
-            .width = width,
-            .height = height
-        }
+    shape->type = BOX_SHAPE;
+    shape->as.box = (BoxShape) {
+        .polygon = (PolygonShape) { 
+            .local_vertices = local_vertices,
+            .world_vertices = world_vertices,
+        },
+        .width = width,
+        .height = height
     };
 }
 
@@ -64,7 +57,7 @@ float shape_moment_of_inertia(Shape* shape) {
     switch (shape->type) {
         case CIRCLE_SHAPE: {
             float r = shape->as.circle.radius;
-            return 0.5 * r * r;
+            return 0.5f * r * r;
         } break;
         case POLYGON_SHAPE: {
             // TODO

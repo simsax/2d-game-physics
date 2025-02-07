@@ -7,56 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Body body_create_circle(float radius, int x, int y, float mass) {
-    Shape shape = shape_create_circle(radius);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    return (Body) {
-        .shape = shape,
-        .position = VEC2(x, y),
-        .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0 ,
-        .restitution = 1.0f,
-        .friction = 0.7f
-    };
-}
-
-Body body_create_polygon(Vec2Array vertices, int x, int y, float mass) {
-    Shape shape = shape_create_polygon(vertices);
-    Vec2 position = VEC2(x, y);
-    shape_update_vertices(&shape, 0, position);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    return (Body) {
-        .shape = shape,
-        .position = position,
-        .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0,
-        .restitution = 1.0f,
-        .friction = 0.7f
-    };
-}
-
-Body body_create_box(float width, float height, int x, int y, float mass) {
-    Shape shape = shape_create_box(width, height);
-    Vec2 position = VEC2(x, y);
-    shape_update_vertices(&shape, 0, position);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    return (Body) {
-        .shape = shape,
-        .position = position,
-        .inv_mass = mass != 0 ? 1.0 / mass : 0,
-        .inv_I = I != 0 ? 1.0 / I : 0,
-        .restitution = 1.0f,
-        .friction = 0.7f
-    };
-}
-
 void body_init_circle(Body* body, float radius, int x, int y, float mass) {
-    Shape shape = shape_create_circle(radius);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    body->shape = shape;
-    body->position = (Vec2) { .x = x, .y = y };
-    body->inv_mass = mass != 0 ? 1.0 / mass : 0;
-    body->inv_I = I != 0 ? 1.0 / I : 0;
+    shape_init_circle(&body->shape, radius);
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(x, y);
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -64,19 +18,17 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
 }
 
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass) {
-    Shape shape = shape_create_polygon(vertices);
-    Vec2 position = VEC2(x, y);
-    shape_update_vertices(&shape, 0, position);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    body->shape = shape;
-    body->position = position;
-    body->inv_mass = mass != 0 ? 1.0 / mass : 0;
-    body->inv_I = I != 0 ? 1.0 / I : 0;
+    shape_init_polygon(&body->shape, vertices);
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(x, y);
+    shape_update_vertices(&body->shape, 0, body->position);
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -84,19 +36,17 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
 }
 
 void body_init_box(Body* body, float width, float height, int x, int y, float mass) {
-    Shape shape = shape_create_box(width, height);
-    Vec2 position = VEC2(x, y);
-    shape_update_vertices(&shape, 0, position);
-    float I = shape_moment_of_inertia(&shape) * mass;
-    body->shape = shape;
-    body->position = position;
-    body->inv_mass = mass != 0 ? 1.0 / mass : 0;
-    body->inv_I = I != 0 ? 1.0 / I : 0;
+    shape_init_box(&body->shape, width, height);
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(x, y);
+    shape_update_vertices(&body->shape, 0, body->position);
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -104,6 +54,8 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     body->angular_acceleration = 0;
     body->sum_forces = VEC2(0, 0);
     body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
 }
@@ -153,8 +105,8 @@ void body_integrate_velocities(Body* body, float dt) {
 }
 
 bool body_is_static(Body* body) {
-    float epsilon = 1e-8;
-    return fabs(body->inv_mass - 0.0f) < epsilon;
+    float epsilon = 1e-8f;
+    return (float) fabs(body->inv_mass - 0.0f) < epsilon;
 }
 
 void body_apply_impulse_at_point(Body* body, Vec2 jn, Vec2 r) {

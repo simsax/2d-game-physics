@@ -4,11 +4,9 @@ CODEDIRS = ./src ./src/physics
 BUILD_DIR = ./build
 CC = cc
 CFLAGS = -std=c99 -Wall -Wextra -Werror -pedantic -pedantic-errors -MP -MMD
-CFLAGS += -Waggregate-return
 CFLAGS += -Wbad-function-cast
 CFLAGS += -Wcast-align
 CFLAGS += -Wcast-qual
-CFLAGS += -Wfloat-equal
 CFLAGS += -Wformat=2
 CFLAGS += -Wlogical-op
 CFLAGS += -Wmissing-declarations
@@ -27,6 +25,7 @@ CFLAGS += -Wunused-but-set-parameter
 CFLAGS += -Wwrite-strings
 CFLAGS += -Wnull-dereference
 CFLAGS += -Wdouble-promotion
+CFLAGS += -fanalyzer
 
 # when developing, turn this on
 # CFLAGS += -Wno-unused-function

@@ -113,7 +113,7 @@ void matMN_print(MatMN m) {
         printf("    ");
         for (int j = 0; j < m.N; j++) {
             float val = MAT_GET(m, i, j);
-            printf("%.2f ", val);
+            printf("%.2f ", (double)val);
         }
         printf("\n");
     }

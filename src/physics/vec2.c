@@ -19,8 +19,8 @@ Vec2 vec2_div(Vec2 v, float f) {
 
 Vec2 vec2_rotate(Vec2 v, float angle) {
     return (Vec2) {
-        v.x * cos(angle) - v.y * sin(angle),
-        v.x * sin(angle) + v.y * cos(angle)
+        v.x * cosf(angle) - v.y * sinf(angle),
+        v.x * sinf(angle) + v.y * cosf(angle)
     };
 }
 

@@ -29,7 +29,7 @@ typedef struct {
                 (xs)->capacity *= 2;                                                        \
             (xs)->items = realloc((xs)->items, (xs)->capacity * sizeof(*(xs)->items));      \
             if ((xs)->items == NULL) {                                                      \
-                printf("ERROR: out of memory, aborting.\n");                        \
+                printf("ERROR: out of memory, aborting.\n");                                \
                 exit(1);                                                                    \
             }                                                                               \
         }                                                                                   \

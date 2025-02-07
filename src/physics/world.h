@@ -16,7 +16,6 @@ typedef struct World {
     FloatArray torques;
 } World;
 
-World world_create(float gravity);
 void world_free(World* world);
 Body* world_new_body(World* world);
 JointConstraint* world_new_joint_constraint(World* world);

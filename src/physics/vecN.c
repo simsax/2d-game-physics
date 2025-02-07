@@ -62,7 +62,7 @@ float vecN_dot(VecN a, VecN b) {
 void vecN_print(VecN vec) {
     printf("[\n");
     for (int i = 0; i < vec.N; i++) {
-        printf("    %f\n", vec.data[i]);
+        printf("    %f\n", (double)vec.data[i]);
     }
     printf("]\n");
 }

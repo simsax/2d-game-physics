@@ -88,7 +88,7 @@ void draw_fill_polygon(int x, int y, Vec2Array vertices, uint32_t color) {
 }
 
 void draw_texture(int x, int y, int width, int height, float rotation, Texture2D* texture) {
-    float rotation_deg = rotation * 57.2958;
+    float rotation_deg = rotation * 57.2958f;
     Rectangle source_rect = {0, 0, texture->width, texture->height};
     Rectangle dest_rect = {x, y, width, height}; // centered around the origin
     Vector2 origin = {width / 2.0f, height / 2.0f}; // rotation origin is relative to dest rect

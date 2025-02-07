@@ -42,13 +42,10 @@ typedef struct {
     Body* items;
 } BodyArray;
 
-Body body_create_circle(float radius, int x, int y, float mass);
-Body body_create_polygon(Vec2Array vertices, int x, int y, float mass);
-void body_set_texture(Body* body, const char* file_path);
-Body body_create_box(float width, float height, int x, int y, float mass);
-void body_init_circle(Body* body, float circle_radius, int x, int y, float mass);
+void body_init_circle(Body* body, float radius, int x, int y, float mass);
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass);
 void body_init_box(Body* body, float width, float height, int x, int y, float mass);
+void body_set_texture(Body* body, const char* file_path);
 void body_integrate_linear(Body* body, float dt);
 void body_integrate_angular(Body* body, float dt);
 void body_add_force(Body* body, Vec2 force);

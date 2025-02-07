@@ -60,33 +60,33 @@ void setup(void) {
     open_window();
     running = true;
 
-    world = world_create(-9.8f);
+    world.gravity = 9.8f; // y points down in screen space
 
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
 
     Body* floor = world_new_body(&world);
-    *floor = body_create_box(WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
+    body_init_box(floor, WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
     floor->restitution = 0.8;
     floor->friction = 0.2;
 
     Body* left_wall = world_new_body(&world);
-    *left_wall = body_create_box(50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
     left_wall->restitution = 0.8;
     left_wall->friction = 0.2;
 
     Body* right_wall = world_new_body(&world); 
-    *right_wall = body_create_box(50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
     right_wall->restitution = 0.8;
     right_wall->friction = 0.2;
 
     Body* ceiling = world_new_body(&world);
-    *ceiling = body_create_box(WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
+    body_init_box(ceiling, WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
     Body* static_box = world_new_body(&world);
-    *static_box = body_create_box(50, 800, x_center, y_center, 0.0);
+    body_init_box(static_box, 50, 800, x_center, y_center, 0.0);
     static_box->rotation = 1.4;
     static_box->restitution = 0.5;
     static_box->friction = 0.3;
@@ -132,7 +132,7 @@ void input(void) {
         /*if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {*/
             //circle
             Body* new_circle = world_new_body(&world);
-            *new_circle = body_create_circle(15, mouse_coord.x, mouse_coord.y, 1.0);
+            body_init_circle(new_circle, 15, mouse_coord.x, mouse_coord.y, 1.0);
             new_circle->restitution = 0.9f;
             new_circle->friction = 1.0f;
             /*body_set_texture(new_circle, "./assets/basketball.png");*/
@@ -143,7 +143,7 @@ void input(void) {
             // add 10 boxes (to debug)
             for (int i = 0; i < 10; i++) {
                 Body* new_box = world_new_body(&world);
-                *new_box = body_create_box(20, 20, mouse_coord.x, mouse_coord.y, 1.0);
+                body_init_box(new_box, 20, 20, mouse_coord.x, mouse_coord.y, 1.0);
                 new_box->restitution = 0.2f;
                 new_box->friction = 0.8f;
             }

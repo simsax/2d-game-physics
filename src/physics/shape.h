@@ -33,9 +33,9 @@ typedef struct {
     } as;
 } Shape;
 
-Shape shape_create_circle(float radius);
-Shape shape_create_polygon(Vec2Array vertices);
-Shape shape_create_box(float width, float height);
+void shape_init_circle(Shape* shape, float radius);
+void shape_init_polygon(Shape* shape, Vec2Array local_vertices);
+void shape_init_box(Shape* shape, float width, float height);
 float shape_moment_of_inertia(Shape* shape);
 
 // rotate and translate shape vertices from "local space" to "world space"

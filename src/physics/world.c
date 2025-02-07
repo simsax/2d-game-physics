@@ -9,12 +9,6 @@
 #define SOLVE_ITERATIONS 5
 #define INITIAL_SIZE (1024 * 1024) // 1 MB
 
-World world_create(float gravity) {
-    return (World) {
-        .gravity = -gravity, // y points down in screen space
-    };
-}
-
 void world_free(World* world) {
     for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];

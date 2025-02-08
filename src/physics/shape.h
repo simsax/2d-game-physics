@@ -10,7 +10,7 @@ typedef enum {
 } ShapeType;
 
 typedef struct {
-    int radius;
+    float radius;
 } CircleShape;
 
 typedef struct {

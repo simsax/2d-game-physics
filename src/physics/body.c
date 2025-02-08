@@ -1,5 +1,6 @@
 #include "body.h"
 #include "shape.h"
+#include "utils.h"
 #include "vec2.h"
 #include <stdbool.h>
 #include <math.h>
@@ -57,6 +58,64 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     body->friction = 0.7f;
 }
 
+void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass) {
+    shape_init_circle(&body->shape, pixels_to_meters(radius));
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
+    body->velocity = VEC2(0, 0);
+    body->acceleration = VEC2(0, 0);
+    body->rotation = 0;
+    body->angular_velocity = 0;
+    body->angular_acceleration = 0;
+    body->sum_forces = VEC2(0, 0);
+    body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
+    body->restitution = 1.0f;
+    body->friction = 0.7f;
+}
+
+void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, float mass) {
+    for (uint32_t i = 0; i < vertices.count; i++) {
+        Vec2 v = vertices.items[i];
+        vertices.items[i] = VEC2(pixels_to_meters(v.x), pixels_to_meters(v.y));
+    }
+    shape_init_polygon(&body->shape, vertices);
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
+    shape_update_vertices(&body->shape, 0, body->position);
+    body->velocity = VEC2(0, 0);
+    body->acceleration = VEC2(0, 0);
+    body->rotation = 0;
+    body->angular_velocity = 0;
+    body->angular_acceleration = 0;
+    body->sum_forces = VEC2(0, 0);
+    body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
+    body->restitution = 1.0f;
+    body->friction = 0.7f;
+}
+
+void body_init_box_pixels(Body* body, float width, float height, int x, int y, float mass) {
+    shape_init_box(&body->shape, pixels_to_meters(width), pixels_to_meters(height));
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
+    shape_update_vertices(&body->shape, 0, body->position);
+    body->velocity = VEC2(0, 0);
+    body->acceleration = VEC2(0, 0);
+    body->rotation = 0;
+    body->angular_velocity = 0;
+    body->angular_acceleration = 0;
+    body->sum_forces = VEC2(0, 0);
+    body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
+    body->restitution = 1.0f;
+    body->friction = 0.7f;
+}
+
+
 void body_add_force(Body* body, Vec2 force) {
     body->sum_forces = vec2_add(body->sum_forces, force);
 }
@@ -84,6 +143,7 @@ void body_integrate_forces(Body* body, float dt) {
     // angular
     body->angular_acceleration = body->sum_torque * body->inv_I;
     body->angular_velocity += body->angular_acceleration * dt;
+    body->angular_velocity *= 0.99f;
 
     body_clear_forces(body);
     body_clear_torque(body);

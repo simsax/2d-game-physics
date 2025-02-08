@@ -66,41 +66,33 @@ void setup(void) {
     float y_center = WINDOW_HEIGHT / 2.0;
 
     Body* floor = world_new_body(&world);
-    body_init_box(floor, WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
+    body_init_box_pixels(floor, WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
     floor->restitution = 0.8;
     floor->friction = 0.2;
 
     Body* left_wall = world_new_body(&world);
-    body_init_box(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
     left_wall->restitution = 0.8;
     left_wall->friction = 0.2;
 
     Body* right_wall = world_new_body(&world); 
-    body_init_box(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
     right_wall->restitution = 0.8;
     right_wall->friction = 0.2;
 
     Body* ceiling = world_new_body(&world);
-    body_init_box(ceiling, WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
+    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
-    Body* static_box = world_new_body(&world);
-    body_init_box(static_box, 50, 800, x_center, y_center, 0.0);
-    static_box->rotation = 1.4;
-    static_box->restitution = 0.5;
-    static_box->friction = 0.3;
-    static_box->angular_velocity = 2.0f;
-    shape_update_vertices(&static_box->shape, static_box->rotation, static_box->position);
-
-    /*Body* static_ball = world_new_body(&world);*/
-    /**static_ball = body_create_circle(100, x_center + 400, y_center, 0.0);*/
-    /**/
-    /*Body* box = world_new_body(&world);*/
-    /**box = body_create_box(200, 200, x_center, y_center, 0.0);*/
-
-    /*Body* c = world_new_body(&world);*/
-    /**c = body_create_circle(100, x_center, y_center, 0.0);*/
+    for (int i = 0; i < 8; i++) {
+        Body* static_box = world_new_body(&world);
+        float ground = WINDOW_HEIGHT - 75.0f;
+        float side_len = 100.0f;
+        body_init_box_pixels(static_box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        static_box->restitution = 0.5;
+        static_box->friction = 0.3;
+    }
 }
 
 void destroy(void) {
@@ -128,26 +120,25 @@ void input(void) {
         mouse_coord.x = GetMouseX();
         mouse_coord.y = GetMouseY();
         
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-        /*if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {*/
+        /*if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {*/
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             //circle
             Body* new_circle = world_new_body(&world);
-            body_init_circle(new_circle, 15, mouse_coord.x, mouse_coord.y, 1.0);
+            body_init_circle_pixels(new_circle, 40, mouse_coord.x, mouse_coord.y, 1.0);
             new_circle->restitution = 0.9f;
             new_circle->friction = 1.0f;
             /*body_set_texture(new_circle, "./assets/basketball.png");*/
-        } else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {
-        /*} else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {*/
+        /*} else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {*/
+        } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             // box
 
             // add 10 boxes (to debug)
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 1; i++) {
                 Body* new_box = world_new_body(&world);
-                body_init_box(new_box, 20, 20, mouse_coord.x, mouse_coord.y, 1.0);
+                body_init_box_pixels(new_box, 60, 60, mouse_coord.x, mouse_coord.y, 1.0);
                 new_box->restitution = 0.2f;
                 new_box->friction = 0.8f;
             }
-            /*body_set_texture(new_box, "./assets/crate.png");*/
 
             // polygon
             /*Body* new_poly = world_new_body(&world);*/
@@ -215,7 +206,7 @@ void render(void) {
                 /*    draw_texture(body->position.x, body->position.y, diameter, diameter,*/
                 /*            body->rotation, &body->texture);*/
                 /*} else {*/
-                draw_circle_line(body->position.x, body->position.y,
+                draw_circle_line_meters(body->position.x, body->position.y,
                         body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
                 /*}*/
             }  
@@ -225,15 +216,15 @@ void render(void) {
                 /*    draw_texture(body->position.x, body->position.y, box_shape->width,*/
                 /*            box_shape->height, body->rotation, &body->texture);*/
                 /*} else {*/
-                draw_polygon(body->position.x, body->position.y, box_shape->polygon.world_vertices, COLOR_BOX);
+                draw_polygon_meters(body->position.x, body->position.y, box_shape->polygon.world_vertices, COLOR_BOX);
                 /*}*/
             }
             if (body->shape.type == POLYGON_SHAPE) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
                 if (!debug) {
-                    draw_fill_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
+                    draw_fill_polygon_meters(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
                 } else {
-                    draw_polygon(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
+                    draw_polygon_meters(body->position.x, body->position.y, polygon_shape->world_vertices, COLOR_BOX);
                 }
             }
         }
@@ -244,7 +235,7 @@ void render(void) {
                 JointConstraint* constraint = &world.joint_constraints.items[i];
                 Body* a = &world.bodies.items[constraint->a_index];
                 Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
-                draw_fill_circle(anchor.x, anchor.y, 3, 0xFF0000FF);
+                draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);
             }
         }
 

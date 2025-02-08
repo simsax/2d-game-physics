@@ -28,7 +28,8 @@ CFLAGS += -Wdouble-promotion
 CFLAGS += -fanalyzer
 
 # when developing, turn this on
-# CFLAGS += -Wno-unused-function
+CFLAGS += -Wno-unused-function
+CFLAGS += -Wno-unused-variable
 
 LDFLAGS = -Wl,-Bstatic -lraylib -Wl,-Bdynamic -lm
 

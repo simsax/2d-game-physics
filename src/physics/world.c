@@ -4,7 +4,6 @@
 #include "contact.h"
 #include "collision.h"
 #include "manifold.h"
-#include "utils.h"
 
 #define SOLVE_ITERATIONS 5
 #define INITIAL_SIZE (1024 * 1024) // 1 MB
@@ -75,8 +74,7 @@ void world_update(World* world, float dt) {
         Body* body = &world->bodies.items[i];
 
         // add weight force
-        // TODO: calculation in meters and not in pixels
-        Vec2 weight = VEC2(0.0,  (world->gravity / body->inv_mass) * PIXELS_PER_METER);
+        Vec2 weight = VEC2(0.0,  world->gravity / body->inv_mass);
         body_add_force(body, weight);
 
         // add forces

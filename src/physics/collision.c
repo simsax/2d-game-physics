@@ -31,7 +31,7 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, int a_index, int b_ind
     CircleShape* a_shape = &a->shape.as.circle;
     CircleShape* b_shape = &b->shape.as.circle;
 
-    int radius_sum = a_shape->radius + b_shape->radius;
+    float radius_sum = a_shape->radius + b_shape->radius;
     Vec2 distance = vec2_sub(b->position, a->position);
     bool is_colliding = vec2_magnitude_squared(distance) <= radius_sum * radius_sum;
 

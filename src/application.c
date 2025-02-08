@@ -210,23 +210,23 @@ void render(void) {
         for (uint32_t i = 0; i < world.bodies.count; i++) {
             Body* body = &world.bodies.items[i];
             if (body->shape.type == CIRCLE_SHAPE) {
-                if (!debug && body->texture.id) {
-                    float diameter = body->shape.as.circle.radius * 2;
-                    draw_texture(body->position.x, body->position.y, diameter, diameter,
-                            body->rotation, &body->texture);
-                } else {
-                    draw_circle_line(body->position.x, body->position.y,
-                            body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
-                }
+                /*if (!debug && body->texture.id) {*/
+                /*    float diameter = body->shape.as.circle.radius * 2;*/
+                /*    draw_texture(body->position.x, body->position.y, diameter, diameter,*/
+                /*            body->rotation, &body->texture);*/
+                /*} else {*/
+                draw_circle_line(body->position.x, body->position.y,
+                        body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
+                /*}*/
             }  
             if (body->shape.type == BOX_SHAPE) {
                 BoxShape* box_shape = &body->shape.as.box;
-                if (!debug && body->texture.id) {
-                    draw_texture(body->position.x, body->position.y, box_shape->width,
-                            box_shape->height, body->rotation, &body->texture);
-                } else {
-                    draw_polygon(body->position.x, body->position.y, box_shape->polygon.world_vertices, COLOR_BOX);
-                }
+                /*if (!debug && body->texture.id) {*/
+                /*    draw_texture(body->position.x, body->position.y, box_shape->width,*/
+                /*            box_shape->height, body->rotation, &body->texture);*/
+                /*} else {*/
+                draw_polygon(body->position.x, body->position.y, box_shape->polygon.world_vertices, COLOR_BOX);
+                /*}*/
             }
             if (body->shape.type == POLYGON_SHAPE) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;

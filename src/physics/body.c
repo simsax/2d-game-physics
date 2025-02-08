@@ -1,11 +1,8 @@
 #include "body.h"
 #include "shape.h"
 #include "vec2.h"
-#include <raylib.h>
 #include <stdbool.h>
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     shape_init_circle(&body->shape, radius);
@@ -126,14 +123,6 @@ void body_apply_impulse_angular(Body *body, float j) {
     if (body_is_static(body))
         return;
     body->angular_velocity += j * body->inv_I;
-}
-
-void body_set_texture(Body* body, const char* file_path) {
-    body->texture = LoadTexture(file_path);
-    if (body->texture.id == 0) {
-        printf("ERROR: Failed to load texture\n");
-        exit(1);
-    }
 }
 
 Vec2 body_local_to_world_space(Body* body, Vec2 point) {

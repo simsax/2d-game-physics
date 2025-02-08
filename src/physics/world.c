@@ -17,9 +17,6 @@ void world_free(World* world) {
             free(body->shape.as.polygon.local_vertices.items);
             free(body->shape.as.polygon.world_vertices.items);
         }
-        if (body->texture.id) {
-            UnloadTexture(body->texture);
-        }
     }
     for (uint32_t i = 0; i < world->joint_constraints.count; i++) {
         constraint_joint_free(&world->joint_constraints.items[i]);

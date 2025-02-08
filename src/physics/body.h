@@ -3,7 +3,6 @@
 
 #include "vec2.h"
 #include "shape.h"
-#include <raylib.h>
 #include <stdbool.h>
 
 typedef struct Body {
@@ -30,10 +29,6 @@ typedef struct Body {
     // coefficients of restitution and friction
     float restitution;
     float friction;
-
-    // hacks below
-    // TODO: move this into Entity struct
-    Texture2D texture;
 } Body;
 
 typedef struct {
@@ -45,7 +40,6 @@ typedef struct {
 void body_init_circle(Body* body, float radius, int x, int y, float mass);
 void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass);
 void body_init_box(Body* body, float width, float height, int x, int y, float mass);
-void body_set_texture(Body* body, const char* file_path);
 void body_integrate_linear(Body* body, float dt);
 void body_integrate_angular(Body* body, float dt);
 void body_add_force(Body* body, Vec2 force);

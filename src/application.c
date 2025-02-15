@@ -85,10 +85,10 @@ void setup(void) {
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 10; i++) {
         Body* static_box = world_new_body(&world);
         float ground = WINDOW_HEIGHT - 75.0f;
-        float side_len = 100.0f;
+        float side_len = 80.0f;
         body_init_box_pixels(static_box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
         static_box->restitution = 0.5;
         static_box->friction = 0.3;

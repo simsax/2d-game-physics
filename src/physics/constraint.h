@@ -39,16 +39,13 @@ typedef struct {
     PenetrationConstraint* items;
 } PenetrationConstraintArray;
 
-// TODO: world should directly supply the body pointers to each of these functions, since
-// they only need to know about the bodies and nothing else
-
 JointConstraint constraint_joint_create(Body* a, Body* b, int a_index, int b_index, Vec2 anchor_point);
 void constraint_joint_free(JointConstraint* constraint);
 void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b);
 void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt);
 void constraint_joint_post_solve(JointConstraint* constraint);
 
-PenetrationConstraint constraint_penetration_create(int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal);
+void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, float* lambda_zero);
 void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Body* b);
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt);
 void constraint_penetration_post_solve(PenetrationConstraint* constraint);

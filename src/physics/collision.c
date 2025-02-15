@@ -1,5 +1,4 @@
 #include "collision.h"
-#include "contact.h"
 #include "shape.h"
 #include "vec2.h"
 #include <float.h>

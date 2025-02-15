@@ -2,7 +2,7 @@
 #define MANIFOLD_H
 
 #include "constraint.h"
-#include "contact.h"
+#include "collision.h"
 
 #define MAX_CONTACTS 2
 
@@ -26,8 +26,8 @@ typedef struct {
 
 struct World;
 
-Manifold manifold_create(int num_contacts, int a_index, int b_index);
-bool manifold_contact_almost_equal(Manifold* manifold, Contact* contacts, int num_contacts);
+void manifold_init(Manifold* manifold, int num_contacts, int a_index, int b_index);
+void manifold_find_existing_contact(Manifold* manifold, float* lambda_zero, Contact* contact, int* p);
 void manifold_pre_solve(Manifold* manifold, BodyArray world_bodies, float dt);
 void manifold_solve(Manifold* manifold, BodyArray world_bodies);
 void manifold_post_solve(Manifold* manifold);

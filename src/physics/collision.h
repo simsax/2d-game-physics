@@ -3,7 +3,17 @@
 
 #include <stdbool.h>
 #include "body.h"
-#include "contact.h"
+
+typedef struct {
+    int a_index;
+    int b_index;
+
+    Vec2 start;
+    Vec2 end;
+
+    Vec2 normal;
+    float depth;
+} Contact;
 
 bool collision_iscolliding(Body* a, Body* b, int a_index, int b_index, Contact* contacts, uint32_t* num_contacts);
 bool collision_iscolliding_circlecircle(Body* a, Body* b, int a_index, int b_index, Contact* contacts, uint32_t* num_contacts);

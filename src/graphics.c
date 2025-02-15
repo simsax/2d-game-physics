@@ -101,10 +101,8 @@ void draw_circle_meters(float x, float y, float radius, uint32_t color) {
 }
 
 void draw_fill_circle_meters(float x, float y, float radius, uint32_t color) {
-    DrawCircle(meters_to_pixels(x), meters_to_pixels(y), meters_to_pixels(radius), GetColor(color));
+    DrawCircle(meters_to_pixels(x), meters_to_pixels(y), radius, GetColor(color));
 }
-
-#include <stdio.h>
 
 void draw_circle_line_meters(float x, float y, float radius, float angle, uint32_t color) {
     Color _color = GetColor(color);

@@ -11,10 +11,9 @@ void manifold_init(Manifold* manifold, int num_contacts, int a_index, int b_inde
     manifold->expired = false;
 }
 
-void manifold_find_existing_contact(Manifold* manifold, float* lambda_zero, Contact* contact, int* p) {
-    float distance_threshold = 0.005f;
+void manifold_find_existing_contact(Manifold* manifold, bool* persistent, Contact* contact, int* p) {
+    float distance_threshold = 0.01f;
     for (int i = 0; i < manifold->num_contacts; i++) {
-        // TODO: check if correct to match both a and b collision points
         PenetrationConstraint* constraint = &manifold->constraints[i];
         Vec2 a_point_m = constraint->a_collision_point;
         Vec2 b_point_m = constraint->b_collision_point;
@@ -24,8 +23,7 @@ void manifold_find_existing_contact(Manifold* manifold, float* lambda_zero, Cont
         if (vec2_magnitude_squared(vec2_sub(a_point_m, a_point_c)) <= distance_threshold * distance_threshold &&
             vec2_magnitude_squared(vec2_sub(b_point_m, b_point_c)) <= distance_threshold * distance_threshold) {
             // found existing contact
-            lambda_zero[0] = constraint->cached_lambda[0] * 0.5f;
-            lambda_zero[1] = constraint->cached_lambda[1] * 0.5f;
+            *persistent = true;
             (*p)++;
             /*printf("Found contact! Lambda_zero is (%f, %f)\n", (double)lambda_zero[0], (double)lambda_zero[1]);*/
             /*draw_fill_circle_meters(a_point_m.x, a_point_m.y, 2, 0xFF0000FF);*/

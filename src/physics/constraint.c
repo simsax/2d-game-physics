@@ -64,15 +64,20 @@ JointConstraint constraint_joint_create(
     };
 }
 
-void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, float* lambda_zero) {
-    constraint->a_index = a_index;
-    constraint->b_index = b_index;
+void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent) {
     constraint->a_collision_point = a_collision_point;
     constraint->b_collision_point = b_collision_point;
     constraint->normal = normal;
-
-    constraint->cached_lambda[0] = lambda_zero[0];
-    constraint->cached_lambda[1] = lambda_zero[1];
+    constraint->a_index = a_index;
+    constraint->b_index = b_index;
+    if (persistent) {
+        // re-use fraction of cached lambda
+        constraint->cached_lambda[0] *= 0.8f;
+        constraint->cached_lambda[1] *= 0.8f;
+    } else {
+        constraint->cached_lambda[0] = 0;
+        constraint->cached_lambda[1] = 0;
+    }
 }
 
 void constraint_joint_free(JointConstraint* constraint) {
@@ -264,7 +269,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a
     // compute bias term (baumgarte stabilization)
     float beta = 0.3f;
     float penetration_slop = 0.0005f; // 0.5 mm
-    /*float restitution_slop = 20.5f; // 0.5 m/s*/
+    float restitution_slop = 0.5f; // 0.5 m/s
     Vec2 pb_pa = vec2_sub(pb, pa);
     float C = vec2_dot(pb_pa, vec2_mult(normal, -1)); // positional error
     C = fmin(C + penetration_slop, 0);
@@ -272,10 +277,11 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a
     Vec2 va = vec2_add(a->velocity, VEC2(-a->angular_velocity * ra.y, a->angular_velocity * ra.x));
     Vec2 vb = vec2_add(b->velocity, VEC2(-b->angular_velocity * rb.y, b->angular_velocity * rb.x));
     float vrel_dot_normal = vec2_dot(vec2_sub(va, vb), normal);
-
+    // TODO: check this out
+    if (fabsf(vrel_dot_normal) <= restitution_slop)
+        vrel_dot_normal = 0;
     float e = a->restitution * b->restitution;
 
-    // TODO: penetration and restitution slop
     constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
 
     float inv_mass[6][6];

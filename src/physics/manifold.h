@@ -27,7 +27,7 @@ typedef struct {
 struct World;
 
 void manifold_init(Manifold* manifold, int num_contacts, int a_index, int b_index);
-void manifold_find_existing_contact(Manifold* manifold, float* lambda_zero, Contact* contact, int* p);
+void manifold_find_existing_contact(Manifold* manifold, bool* persistent, Contact* contact, int* p);
 void manifold_pre_solve(Manifold* manifold, BodyArray world_bodies, float dt);
 void manifold_solve(Manifold* manifold, BodyArray world_bodies);
 void manifold_post_solve(Manifold* manifold);

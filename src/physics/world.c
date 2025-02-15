@@ -4,7 +4,7 @@
 #include "collision.h"
 #include "manifold.h"
 
-#define SOLVE_ITERATIONS 5
+#define SOLVE_ITERATIONS 8
 
 void world_free(World* world) {
     for (uint32_t i = 0; i < world->bodies.count; i++) {
@@ -116,10 +116,10 @@ void world_update(World* world, float dt) {
                     manifold_init(manifold, num_contacts, i, j);
                 } 
                 manifold->expired = false;
-                float lambda_zeros[2][2] = { 0 };
+                bool persistent[2] = { false };
                 if (warm_start) {
                     for (uint32_t c = 0; c < num_contacts; c++) {
-                        manifold_find_existing_contact(manifold, lambda_zeros[c], &contacts[c], &persistent_contacts);
+                        manifold_find_existing_contact(manifold, &persistent[c], &contacts[c], &persistent_contacts);
                     }
                 }
                 for (uint32_t c = 0; c < num_contacts; c++) {
@@ -131,7 +131,7 @@ void world_update(World* world, float dt) {
 
                     /*printf("Init contact with lambda_zero as (%f, %f)\n", (double)lambda_zeros[c][0], (double)lambda_zeros[c][1]);*/
                     constraint_penetration_init(
-                        &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal, lambda_zeros[c]);
+                        &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal, persistent[c]);
                 }
                 manifold->num_contacts = num_contacts;
             }

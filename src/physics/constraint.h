@@ -45,7 +45,7 @@ void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b);
 void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt);
 void constraint_joint_post_solve(JointConstraint* constraint);
 
-void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, float* lambda_zero);
+void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent);
 void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Body* b);
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt);
 void constraint_penetration_post_solve(PenetrationConstraint* constraint);

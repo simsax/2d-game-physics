@@ -72,8 +72,8 @@ void constraint_penetration_init(PenetrationConstraint* constraint, int a_index,
     constraint->b_index = b_index;
     if (persistent) {
         // re-use fraction of cached lambda
-        constraint->cached_lambda[0] *= 0.8f;
-        constraint->cached_lambda[1] *= 0.8f;
+        constraint->cached_lambda[0] *= 0.9f;
+        constraint->cached_lambda[1] *= 0.9f;
     } else {
         constraint->cached_lambda[0] = 0;
         constraint->cached_lambda[1] = 0;
@@ -267,7 +267,7 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a
     body_apply_impulse_angular(b, impulses[5]);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.3f;
+    float beta = 0.1f;
     float penetration_slop = 0.0005f; // 0.5 mm
     float restitution_slop = 0.5f; // 0.5 m/s
     Vec2 pb_pa = vec2_sub(pb, pa);
@@ -330,12 +330,13 @@ void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Bo
     };
     constraint->cached_lambda[0] += lambda[0];
     constraint->cached_lambda[1] += lambda[1];
-    // clamp to avoid penetration
+    // clamp to avoid pulling objects together
     if (constraint->cached_lambda[0] < 0.0f)
         constraint->cached_lambda[0] = 0.0f;
 
     // keep friction values between -λn*μ and λn*μ
     if (constraint->friction) {
+        // TODO: try Mc*g instead of cached_lamdba
         float max_friction = constraint->cached_lambda[0] * constraint->friction; // λn*μ
         constraint->cached_lambda[1] = clamp(constraint->cached_lambda[1], -max_friction, max_friction);
     }

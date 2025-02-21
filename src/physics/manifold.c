@@ -12,7 +12,7 @@ void manifold_init(Manifold* manifold, int num_contacts, int a_index, int b_inde
 }
 
 void manifold_find_existing_contact(Manifold* manifold, bool* persistent, Contact* contact, int* p) {
-    float distance_threshold = 0.01f;
+    float distance_threshold = 0.005f;
     for (int i = 0; i < manifold->num_contacts; i++) {
         PenetrationConstraint* constraint = &manifold->constraints[i];
         Vec2 a_point_m = constraint->a_collision_point;

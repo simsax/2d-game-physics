@@ -138,7 +138,7 @@ void world_update(World* world, float dt) {
         }
     }
 
-    printf("Persistent: %d\n", persistent_contacts);
+    /*printf("Persistent: %d\n", persistent_contacts);*/
 
     // delete expired manifold
     for (uint32_t i = 0; i < world->manifolds.count; i++) {

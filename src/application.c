@@ -90,9 +90,8 @@ void setup(void) {
         float ground = WINDOW_HEIGHT - 75.0f;
         float side_len = 80.0f;
         body_init_box_pixels(static_box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
-        /*static_box->restitution = 0.5;*/
         static_box->restitution = 0.0;
-        static_box->friction = 0.8;
+        static_box->friction = 0.4;
     }
 }
 

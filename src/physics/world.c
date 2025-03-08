@@ -100,7 +100,6 @@ void world_update(World* world, float dt) {
     // check collisions
     // TODO: do I even need the concept of a manifold, or can I just identify the contacts independently?
     bool warm_start = true;
-    int persistent_contacts = 0;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -119,26 +118,25 @@ void world_update(World* world, float dt) {
                 bool persistent[2] = { false };
                 if (warm_start) {
                     for (uint32_t c = 0; c < num_contacts; c++) {
-                        manifold_find_existing_contact(manifold, &persistent[c], &contacts[c], &persistent_contacts);
+                        persistent[c] = manifold_find_existing_contact(manifold, &contacts[c]);
                     }
                 }
                 for (uint32_t c = 0; c < num_contacts; c++) {
                     // draw collision points and normal
-                    /*draw_fill_circle(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
-                    /*draw_fill_circle(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
+                    /*draw_fill_circle_meters(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
+                    /*draw_fill_circle_meters(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
                     /*Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));*/
-                    /*draw_line(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
+                    /*draw_line_pixels(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
 
-                    /*printf("Init contact with lambda_zero as (%f, %f)\n", (double)lambda_zeros[c][0], (double)lambda_zeros[c][1]);*/
+                    // contact->end is pa, contact->start is pb, normal is from A to B
                     constraint_penetration_init(
-                        &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index, contacts[c].start, contacts[c].end, contacts[c].normal, persistent[c]);
+                        &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index,
+                        contacts[c].end, contacts[c].start, contacts[c].normal, persistent[c]);
                 }
                 manifold->num_contacts = num_contacts;
             }
         }
     }
-
-    /*printf("Persistent: %d\n", persistent_contacts);*/
 
     // delete expired manifold
     for (uint32_t i = 0; i < world->manifolds.count; i++) {
@@ -175,13 +173,6 @@ void world_update(World* world, float dt) {
                 manifold_solve(manifold, world->bodies);
             }
         }
-    }
-    for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
-        constraint_joint_post_solve(&world->joint_constraints.items[c]);
-    }
-    for (uint32_t c = 0; c < world->manifolds.count; c++) {
-        if (world->manifolds.items[c].a_index != -1)
-            manifold_post_solve(&world->manifolds.items[c]);
     }
 
     // integrate all velocities

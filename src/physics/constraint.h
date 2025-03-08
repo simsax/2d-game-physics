@@ -19,9 +19,10 @@ typedef struct {
     int b_index; // index of body B in the world's bodies array
     Vec2 a_collision_point; // collision point of A in world's space
     Vec2 b_collision_point; // collision point of B in world's space
-    float jacobian[2][6];
-    float lhs[2][2]; // J*M_inv*Jt
-    float cached_lambda[2]; // TODO: use Vec2
+    float k_normal; // J*M_inv*Jt
+    float k_tangent;
+    float lambda_normal; // impulse magnitude along normal
+    float lambda_tangent; // impulse magnitude along tangent
     float bias;
     Vec2 normal;
     float friction; // friction coefficient between the two penetrating bodies
@@ -43,11 +44,9 @@ JointConstraint constraint_joint_create(Body* a, Body* b, int a_index, int b_ind
 void constraint_joint_free(JointConstraint* constraint);
 void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b);
 void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt);
-void constraint_joint_post_solve(JointConstraint* constraint);
 
 void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent);
 void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Body* b);
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt);
-void constraint_penetration_post_solve(PenetrationConstraint* constraint);
 
 #endif // CONSTRAINT_H

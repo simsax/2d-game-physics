@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define SHOW_FPS 1
 
@@ -40,8 +42,6 @@ static World world;
 /*static Arena arena;*/
 static Vec2 mouse_coord = {0, 0};
 
-// ambitious TODO: take all commits, turn them into a full 2d physics demo project with different scenes
-// curate all of them (for ex. gravitation add textures, planets and stars)
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -57,6 +57,7 @@ static Vec2 mouse_coord = {0, 0};
 /**/
 
 void setup(void) {
+    srand(time(NULL));
     open_window();
     running = true;
 
@@ -85,13 +86,19 @@ void setup(void) {
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
+    /*Body* static_box = world_new_body(&world);*/
+    /*body_init_box_pixels(static_box, 200, 800, x_center, y_center, 0.0);*/
+    /*static_box->restitution = 0.8;*/
+    /*static_box->friction = 0.2;*/
+    /*static_box->rotation = 1.4;*/
+
     for (int i = 0; i < 10; i++) {
         Body* static_box = world_new_body(&world);
         float ground = WINDOW_HEIGHT - 75.0f;
         float side_len = 80.0f;
         body_init_box_pixels(static_box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
         static_box->restitution = 0.0;
-        static_box->friction = 0.4;
+        static_box->friction = 0.8;
     }
 }
 

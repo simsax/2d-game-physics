@@ -8,46 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 
-// TODO: move this out
-
-static void mat_transpose(int rows, int cols, float in[rows][cols], float out[cols][rows]) {
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            out[j][i] = in[i][j];
-        }
-    }
-}
-
-static void mat_mult_vec(int rows, int cols, float mat[rows][cols], float vec[cols], float out[rows]) {
-    for (int i = 0; i < rows; i++) {
-        float val = 0;
-        // dot prod of row i of mat with vec
-        for (int j = 0; j < cols; j++) {
-            val += mat[i][j] * vec[j];
-        }
-        out[i] = val;
-    }
-}
-
-static void mat_mult_mat(int rows_a, int cols_a, float a[rows_a][cols_a],
-        int rows_b, int cols_b, float b[rows_b][cols_b], float out[rows_a][cols_b]) {
-    if (cols_a != rows_b) {
-        printf("ERROR: cannot multiply matrix of dimensions (%d, %d) with matrix of dimensions (%d, %d).\n",
-                rows_a, cols_a, rows_b, cols_b);
-        exit(1);
-    }
-    for (int i = 0; i < rows_a; i++) {
-        for (int j = 0; j < cols_b; j++) {
-            float val = 0;
-            // dot prod of row i of a with col j of b
-            for (int k = 0; k < cols_a; k++) {
-                val += a[i][k] * b[k][j];
-            }
-            out[i][j] = val;
-        }
-    }
-}
-
 JointConstraint constraint_joint_create(
         Body* a, Body* b, int a_index, int b_index, Vec2 anchor_point) {
     MatMN jacobian = matMN_create(1, 6, NULL);
@@ -72,11 +32,11 @@ void constraint_penetration_init(PenetrationConstraint* constraint, int a_index,
     constraint->b_index = b_index;
     if (persistent) {
         // re-use fraction of cached lambda
-        constraint->cached_lambda[0] *= 0.9f;
-        constraint->cached_lambda[1] *= 0.9f;
+        constraint->lambda_normal *= 0.9f;
+        constraint->lambda_tangent *= 0.9f;
     } else {
-        constraint->cached_lambda[0] = 0;
-        constraint->cached_lambda[1] = 0;
+        constraint->lambda_normal = 0;
+        constraint->lambda_tangent = 0;
     }
 }
 
@@ -102,16 +62,6 @@ static MatMN constraint_joint_get_inv_mass(Body* a, Body* b) {
     return inv_mass;
 }
 
-static void constraint_penetration_get_inv_mass(Body* a, Body* b, float inv_mass[6][6]) {
-    memset(inv_mass, 0, 36 * sizeof(float));
-    inv_mass[0][0] = a->inv_mass;
-    inv_mass[1][1] = a->inv_mass;
-    inv_mass[2][2] = a->inv_I;
-    inv_mass[3][3] = b->inv_mass;
-    inv_mass[4][4] = b->inv_mass;
-    inv_mass[5][5] = b->inv_I;
-}
-
 // [va.x, va.y, ωa, vb.x, vb.y, ωb]
 static VecN constraint_joint_get_velocities(Body* a, Body* b) {
     VecN v = vecN_create(6, NULL);
@@ -122,15 +72,6 @@ static VecN constraint_joint_get_velocities(Body* a, Body* b) {
     v.data[4] = b->velocity.y;
     v.data[5] = b->angular_velocity;
     return v;
-}
-
-static void constraint_penetration_get_velocities(Body* a, Body* b, float velocities[]) {
-    velocities[0] = a->velocity.x;
-    velocities[1] = a->velocity.y;
-    velocities[2] = a->angular_velocity;
-    velocities[3] = b->velocity.x;
-    velocities[4] = b->velocity.y;
-    velocities[5] = b->angular_velocity;
 }
 
 void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt) {
@@ -213,151 +154,111 @@ void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b) {
 }
 
 
-void constraint_joint_post_solve(JointConstraint* constraint) {
-    (void) constraint;
-}
-
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt) {
-    // get collision points
     Vec2 pa = constraint->a_collision_point;
     Vec2 pb = constraint->b_collision_point;
 
     Vec2 ra = vec2_sub(pa, a->position);
     Vec2 rb = vec2_sub(pb, b->position);
     Vec2 normal = constraint->normal;
+    float ra_cross_n = vec2_cross(ra, normal);
+    float rb_cross_n = vec2_cross(rb, normal);
 
-    // A linear velocity
-    Vec2 j1 = vec2_mult(normal, -1.0f);
-    constraint->jacobian[0][0] = j1.x;
-    constraint->jacobian[0][1] = j1.y;
+    // this formula is obtained by deriving J * M^(-1) * Jt
+    float k_a_n = a->inv_mass + a->inv_I * (ra_cross_n * ra_cross_n);
+    float k_b_n = b->inv_mass + b->inv_I * (rb_cross_n * rb_cross_n);
+    constraint->k_normal = k_a_n + k_b_n;
 
-    // A angular velocity
-    float j2 = vec2_cross(ra, normal) * -1.0f;
-    constraint->jacobian[0][2] = j2;
-
-    // B linear velocity
-    Vec2 j3 = normal;
-    constraint->jacobian[0][3] = j3.x;
-    constraint->jacobian[0][4] = j3.y;
-
-    // B angular velocity
-    float j4 = vec2_cross(rb, normal);
-    constraint->jacobian[0][5] = j4;
-
-    // populate second row of the Jacobian (tangent vector - friction)
     constraint->friction = a->friction * b->friction;
-    if (constraint->friction > 0.0f) {
-        Vec2 t = vec2_normal(normal);
-        constraint->jacobian[1][0] = -t.x;
-        constraint->jacobian[1][1] = -t.y;
-        constraint->jacobian[1][2] = vec2_cross(ra, t) * -1.0f;
-        constraint->jacobian[1][3] = t.x;
-        constraint->jacobian[1][4] = t.y;
-        constraint->jacobian[1][5] = vec2_cross(rb, t);
-    }
+    Vec2 tangent = vec2_normal(normal);
+    float ra_cross_t = vec2_cross(ra, tangent);
+    float rb_cross_t = vec2_cross(rb, tangent);
+    float k_a_t = a->inv_mass + a->inv_I * (ra_cross_t * ra_cross_t);
+    float k_b_t = b->inv_mass + b->inv_I * (rb_cross_t * rb_cross_t);
+    constraint->k_tangent = k_a_t + k_b_t;
 
-    // warm starting (apply cached lambda)
-    float jacobian_t[6][2];
-    mat_transpose(2, 6, constraint->jacobian, jacobian_t);
-    float impulses[6];
-    mat_mult_vec(6, 2, jacobian_t, constraint->cached_lambda, impulses);
-    body_apply_impulse_linear(a, VEC2(impulses[0], impulses[1]));
-    body_apply_impulse_angular(a, impulses[2]);
-    body_apply_impulse_linear(b, VEC2(impulses[3], impulses[4]));
-    body_apply_impulse_angular(b, impulses[5]);
+    // warm starting
+    /*Vec2 accumulated_impulse = vec2_add(vec2_mult(normal, constraint->lambda_normal), vec2_mult(tangent, constraint->lambda_tangent));*/
+    /*body_apply_impulse_linear(a, vec2_mult(accumulated_impulse, -1));*/
+    /*body_apply_impulse_angular(a, -vec2_cross(ra, accumulated_impulse));*/
+    /*body_apply_impulse_linear(b, accumulated_impulse);*/
+    /*body_apply_impulse_angular(b, vec2_cross(rb, accumulated_impulse));*/
+
+    // for some it's more stable using only normal impulse
+    float lambda_normal = constraint->lambda_normal;
+    body_apply_impulse_linear(a, VEC2(-normal.x * lambda_normal, -normal.y * lambda_normal));
+    body_apply_impulse_angular(a, -ra_cross_n * lambda_normal);
+    body_apply_impulse_linear(b, VEC2(normal.x * lambda_normal, normal.y * lambda_normal));
+    body_apply_impulse_angular(b, rb_cross_n * lambda_normal);
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.1f;
+    float beta = 0.2f;
     float penetration_slop = 0.0005f; // 0.5 mm
     float restitution_slop = 0.5f; // 0.5 m/s
     Vec2 pb_pa = vec2_sub(pb, pa);
-    float C = vec2_dot(pb_pa, vec2_mult(normal, -1)); // positional error
+    float C = vec2_dot(pb_pa, normal); // positional error
+    // C is always < 0
     C = fmin(C + penetration_slop, 0);
 
     Vec2 va = vec2_add(a->velocity, VEC2(-a->angular_velocity * ra.y, a->angular_velocity * ra.x));
     Vec2 vb = vec2_add(b->velocity, VEC2(-b->angular_velocity * rb.y, b->angular_velocity * rb.x));
-    float vrel_dot_normal = vec2_dot(vec2_sub(va, vb), normal);
+    float vrel_n = vec2_dot(vec2_sub(vb, va), normal);
     // TODO: check this out
-    if (fabsf(vrel_dot_normal) <= restitution_slop)
-        vrel_dot_normal = 0;
+    if (fabsf(vrel_n) <= restitution_slop)
+        vrel_n = 0;
     float e = a->restitution * b->restitution;
 
-    constraint->bias = (beta / dt) * C + e * vrel_dot_normal;
-
-    float inv_mass[6][6];
-    constraint_penetration_get_inv_mass(a, b, inv_mass);
-    float j_inv_mass[2][6];
-    mat_mult_mat(2, 6, constraint->jacobian, 6, 6, inv_mass, j_inv_mass);
-    mat_mult_mat(2, 6, j_inv_mass, 6, 2, jacobian_t, constraint->lhs);
-
-    // keep only diagonal terms
-    constraint->lhs[0][1] = 0.0f;
-    constraint->lhs[1][0] = 0.0f;
+    constraint->bias = (beta / dt) * C + e * vrel_n;
 }
 
 void constraint_penetration_solve(PenetrationConstraint* constraint, Body* a, Body* b) {
-    float velocities[6];
-    float rhs[2];
-    constraint_penetration_get_velocities(a, b, velocities);
-    mat_mult_vec(2, 6, constraint->jacobian, velocities, rhs);
-    // B (1x2) rhs = j_v * -1
-    for (int i = 0; i < 2; i++)
-        rhs[i] *= -1;
-    rhs[0] -= constraint->bias;
+    Vec2 pa = constraint->a_collision_point;
+    Vec2 pb = constraint->b_collision_point;
+    Vec2 ra = vec2_sub(pa, a->position);
+    Vec2 rb = vec2_sub(pb, b->position);
+    Vec2 normal = constraint->normal;
 
-    // Computing lambda by solving 2x2 system directly
-    float (*A)[2] = constraint->lhs;
-    float det_A = A[0][0] * A[1][1] - A[1][0] * A[0][1];
+    float ra_cross_n = vec2_cross(ra, normal);
+    float rb_cross_n = vec2_cross(rb, normal);
 
-    float lambda[2] = { 0.0f, 0.0f };
-    if (constraint->friction) {
-        if (det_A != 0.0f) { // TODO: is this comparison legit
-            lambda[0] = (A[1][1] * rhs[0] - A[0][1] * rhs[1]) / det_A;
-            lambda[1] = (A[0][0] * rhs[1] - A[1][0] * rhs[0]) / det_A;
-        }
-    } else {
-        // if there is no friction, only first term of lhs matrix is meaningful
-        float first_term = A[0][0];
-        if (first_term != 0.0f) { // TODO: is this comparison legit
-            lambda[0] = rhs[0] / first_term;
-        }
-    }
+    float va_n = vec2_dot(a->velocity, normal) + ra_cross_n * a->angular_velocity;
+    float vb_n = vec2_dot(b->velocity, normal) + rb_cross_n * b->angular_velocity;
+    float vrel_n = vb_n - va_n;
+
+    float lambda_normal = -(vrel_n + constraint->bias) / constraint->k_normal;
 
     // clamp lambda
-    float old_cached_lambda[2] = {
-        constraint->cached_lambda[0],
-        constraint->cached_lambda[1]
-    };
-    constraint->cached_lambda[0] += lambda[0];
-    constraint->cached_lambda[1] += lambda[1];
+    float old_lambda_normal = constraint->lambda_normal;
+    constraint->lambda_normal += lambda_normal;
     // clamp to avoid pulling objects together
-    if (constraint->cached_lambda[0] < 0.0f)
-        constraint->cached_lambda[0] = 0.0f;
+    if (constraint->lambda_normal < 0.0f)
+        constraint->lambda_normal = 0.0f;
 
-    // keep friction values between -λn*μ and λn*μ
-    if (constraint->friction) {
-        // TODO: try Mc*g instead of cached_lamdba
-        float max_friction = constraint->cached_lambda[0] * constraint->friction; // λn*μ
-        constraint->cached_lambda[1] = clamp(constraint->cached_lambda[1], -max_friction, max_friction);
-    }
+    lambda_normal = constraint->lambda_normal - old_lambda_normal;
+    body_apply_impulse_linear(a, VEC2(-normal.x * lambda_normal, -normal.y * lambda_normal));
+    body_apply_impulse_angular(a, -ra_cross_n * lambda_normal);
+    body_apply_impulse_linear(b, VEC2(normal.x * lambda_normal, normal.y * lambda_normal));
+    body_apply_impulse_angular(b, rb_cross_n * lambda_normal);
 
-    lambda[0] = constraint->cached_lambda[0] - old_cached_lambda[0];
-    lambda[1] = constraint->cached_lambda[1] - old_cached_lambda[1];
+    Vec2 tangent = vec2_normal(normal);
+    float ra_cross_t = vec2_cross(ra, tangent);
+    float rb_cross_t = vec2_cross(rb, tangent);
 
-    // compute final impulses with direction and magnitude
-    float jacobian_t[6][2];
-    // TODO: check if faster to compute jacobian_t every time or cache it
-    mat_transpose(2, 6, constraint->jacobian, jacobian_t);
-    float impulses[6];
-    mat_mult_vec(6, 2, jacobian_t, lambda, impulses);
+    float va_t = vec2_dot(a->velocity, tangent) + ra_cross_t * a->angular_velocity;
+    float vb_t = vec2_dot(b->velocity, tangent) + rb_cross_t * b->angular_velocity;
+    float vrel_t = vb_t - va_t;
+    float lambda_tangent = -vrel_t / constraint->k_tangent;
 
-    body_apply_impulse_linear(a, VEC2(impulses[0], impulses[1]));
-    body_apply_impulse_angular(a, impulses[2]);
-    body_apply_impulse_linear(b, VEC2(impulses[3], impulses[4]));
-    body_apply_impulse_angular(b, impulses[5]);
+    // clamp friction between -λn*μ and λn*μ
+    float max_friction = constraint->lambda_normal * constraint->friction; // λn*μ
+    float old_lambda_tangent = constraint->lambda_tangent;
+    constraint->lambda_tangent = clamp(constraint->lambda_tangent + lambda_tangent, -max_friction, max_friction);
+    lambda_tangent = constraint->lambda_tangent - old_lambda_tangent;
+
+    body_apply_impulse_linear(a, VEC2(-tangent.x * lambda_tangent, -tangent.y * lambda_tangent));
+    body_apply_impulse_angular(a, -ra_cross_t * lambda_tangent);
+    body_apply_impulse_linear(b, VEC2(tangent.x * lambda_tangent, tangent.y * lambda_tangent));
+    body_apply_impulse_angular(b, rb_cross_t * lambda_tangent);
 }
 
-void constraint_penetration_post_solve(PenetrationConstraint* constraint) {
-    (void) constraint;
-}
 

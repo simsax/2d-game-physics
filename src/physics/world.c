@@ -11,19 +11,13 @@ void world_free(World* world) {
         Body* body = &world->bodies.items[i];
         bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
         if (is_polygon) {
-            free(body->shape.as.polygon.local_vertices.items);
-            free(body->shape.as.polygon.world_vertices.items);
+            DA_FREE(&body->shape.as.polygon.local_vertices);
+            DA_FREE(&body->shape.as.polygon.world_vertices);
         }
     }
     for (uint32_t i = 0; i < world->joint_constraints.count; i++) {
         constraint_joint_free(&world->joint_constraints.items[i]);
     }
-    /*for (uint32_t i = 0; i < world->manifolds.count; i++) {*/
-    /*    Manifold* m = &world->manifolds.items[i];*/
-    /*    if (m->a_index != -1) {*/
-    /*        manifold_free(&world->manifolds.items[i]);*/
-    /*    }*/
-    /*}*/
     DA_FREE(&world->bodies);
     DA_FREE(&world->joint_constraints);
     DA_FREE(&world->manifolds);

@@ -56,50 +56,94 @@ static Vec2 mouse_coord = {0, 0};
 /*}*/
 /**/
 
-void setup(void) {
-    srand(time(NULL));
-    open_window();
-    running = true;
+static void demo_incline_plane(void) {
+    float x_center = WINDOW_WIDTH / 2.0;
+    float y_center = WINDOW_HEIGHT / 2.0;
+    Body* static_box = world_new_body(&world);
+    body_init_box_pixels(static_box, 200, 800, x_center, y_center, 0.0);
+    static_box->restitution = 0.8;
+    static_box->friction = 0.2;
+    static_box->rotation = 1.4;
+}
 
+static void demo_stack(void) {
+    float x_center = WINDOW_WIDTH / 2.0;
+    float ground = WINDOW_HEIGHT - 75.0f;
+    float side_len = 80.0f;
+    for (int i = 0; i < 10; i++) {
+        Body* box = world_new_body(&world);
+        body_init_box_pixels(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        box->restitution = 0.0;
+        box->friction = 0.2;
+    }
+}
+
+static void demo_pyramid(void) {
+    int len_base = 12;
+    float x_center = WINDOW_WIDTH / 2.0;
+    float ground = WINDOW_HEIGHT - 75.0f;
+    float side_len = 40.0f;
+    float x_start = x_center - (len_base / 2.0f) * side_len;
+    float y_offset = side_len * 0.25f;
+    float x_offset = side_len * 1.125f;
+    float y_start = ground - side_len / 2.0f - y_offset;
+    for (int i = 0; i < len_base; i++) {
+        float y = y_start - i * (x_offset + y_offset);
+        float x_row = x_start + i * x_offset / 2.0f;
+        for (int j = i; j < len_base; j++) {
+            float x = x_row + (j - i) * x_offset;
+            Body* box = world_new_body(&world);
+            body_init_box_pixels(box, side_len, side_len, x, y, 1.0);
+            box->restitution = 0.0;
+            box->friction = 0.4;
+        }
+    }
+
+}
+
+// TODO: some demos work better with some values, check box2d
+// ex, stack of boxes better when using more penetration slop
+
+// values to check:
+// - fraction of lambda impulse to re-use (probably just use all)
+// - bias
+// - penetration slop
+// - restitution? For now set it 0
+
+static void start_simulation(void) {
     world.gravity = 9.8f; // y points down in screen space
 
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
 
     Body* floor = world_new_body(&world);
-    body_init_box_pixels(floor, WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0);
+    body_init_box_pixels(floor, WINDOW_WIDTH - 50, 50, x_center, WINDOW_HEIGHT - 50, 0.0f);
     floor->restitution = 0.8;
-    floor->friction = 0.2;
+    floor->friction = 0.8;
 
     Body* left_wall = world_new_body(&world);
-    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0f);
     left_wall->restitution = 0.8;
     left_wall->friction = 0.2;
 
     Body* right_wall = world_new_body(&world); 
-    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0);
+    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50, WINDOW_HEIGHT / 2, 0.0f);
     right_wall->restitution = 0.8;
     right_wall->friction = 0.2;
 
     Body* ceiling = world_new_body(&world);
-    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50, 50, x_center, 50, 0.0);
+    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50, 50, x_center, 50, 0.0f);
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
-    /*Body* static_box = world_new_body(&world);*/
-    /*body_init_box_pixels(static_box, 200, 800, x_center, y_center, 0.0);*/
-    /*static_box->restitution = 0.8;*/
-    /*static_box->friction = 0.2;*/
-    /*static_box->rotation = 1.4;*/
+    demo_pyramid();
+}
 
-    for (int i = 0; i < 10; i++) {
-        Body* static_box = world_new_body(&world);
-        float ground = WINDOW_HEIGHT - 75.0f;
-        float side_len = 80.0f;
-        body_init_box_pixels(static_box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
-        static_box->restitution = 0.0;
-        static_box->friction = 0.8;
-    }
+void setup(void) {
+    srand(time(NULL));
+    open_window();
+    running = true;
+    start_simulation();
 }
 
 void destroy(void) {
@@ -119,6 +163,11 @@ void input(void) {
     if (IsKeyPressed(KEY_P)) {
         paused = !paused;
     }
+    if (IsKeyPressed(KEY_R)) {
+        paused = false;
+        world_free(&world);
+        start_simulation();
+    }
 
     /*world.bodies.items[5].position = mouse_coord;*/
 
@@ -132,20 +181,16 @@ void input(void) {
             //circle
             Body* new_circle = world_new_body(&world);
             body_init_circle_pixels(new_circle, 40, mouse_coord.x, mouse_coord.y, 1.0);
-            new_circle->restitution = 0.9f;
+            new_circle->restitution = 0.5f;
             new_circle->friction = 1.0f;
             /*body_set_texture(new_circle, "./assets/basketball.png");*/
         /*} else if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) {*/
         } else if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
             // box
-
-            // add 10 boxes (to debug)
-            for (int i = 0; i < 1; i++) {
-                Body* new_box = world_new_body(&world);
-                body_init_box_pixels(new_box, 60, 60, mouse_coord.x, mouse_coord.y, 1.0);
-                new_box->restitution = 0.2f;
-                new_box->friction = 0.8f;
-            }
+            Body* new_box = world_new_body(&world);
+            body_init_box_pixels(new_box, 60, 60, mouse_coord.x, mouse_coord.y, 10.0);
+            new_box->restitution = 0.2f;
+            new_box->friction = 0.8f;
 
             // polygon
             /*Body* new_poly = world_new_body(&world);*/

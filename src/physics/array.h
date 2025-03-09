@@ -46,6 +46,15 @@ typedef struct {
       &((xs)->items[(xs)->count++]))
 
 #define DA_NULL { .capacity = 0, .count = 0, .items = NULL }
-#define DA_FREE(xs) free((xs)->items)
+
+// pointer must be set to NULL otherwise next realloc on this pointer will be undefined
+#define DA_FREE(xs)                                                                     \
+    do {                                                                                \
+        free((xs)->items);                                                              \
+        (xs)->capacity = 0;                                                             \
+        (xs)->count = 0;                                                                \
+        (xs)->items = NULL;                                                             \
+    } while (0)                                                                         \
+
 
 #endif // ARRAY_H

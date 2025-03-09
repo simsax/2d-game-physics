@@ -30,14 +30,11 @@ void constraint_penetration_init(PenetrationConstraint* constraint, int a_index,
     constraint->normal = normal;
     constraint->a_index = a_index;
     constraint->b_index = b_index;
-    if (persistent) {
-        // re-use fraction of cached lambda
-        constraint->lambda_normal *= 0.9f;
-        constraint->lambda_tangent *= 0.9f;
-    } else {
+    if (!persistent) {
         constraint->lambda_normal = 0;
         constraint->lambda_tangent = 0;
     }
+    // otherwise, we re-use the previous impulse
 }
 
 void constraint_joint_free(JointConstraint* constraint) {
@@ -178,22 +175,15 @@ void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a
     constraint->k_tangent = k_a_t + k_b_t;
 
     // warm starting
-    /*Vec2 accumulated_impulse = vec2_add(vec2_mult(normal, constraint->lambda_normal), vec2_mult(tangent, constraint->lambda_tangent));*/
-    /*body_apply_impulse_linear(a, vec2_mult(accumulated_impulse, -1));*/
-    /*body_apply_impulse_angular(a, -vec2_cross(ra, accumulated_impulse));*/
-    /*body_apply_impulse_linear(b, accumulated_impulse);*/
-    /*body_apply_impulse_angular(b, vec2_cross(rb, accumulated_impulse));*/
-
-    // for some it's more stable using only normal impulse
-    float lambda_normal = constraint->lambda_normal;
-    body_apply_impulse_linear(a, VEC2(-normal.x * lambda_normal, -normal.y * lambda_normal));
-    body_apply_impulse_angular(a, -ra_cross_n * lambda_normal);
-    body_apply_impulse_linear(b, VEC2(normal.x * lambda_normal, normal.y * lambda_normal));
-    body_apply_impulse_angular(b, rb_cross_n * lambda_normal);
+    Vec2 accumulated_impulse = vec2_add(vec2_mult(normal, constraint->lambda_normal), vec2_mult(tangent, constraint->lambda_tangent));
+    body_apply_impulse_linear(a, vec2_mult(accumulated_impulse, -1));
+    body_apply_impulse_angular(a, -vec2_cross(ra, accumulated_impulse));
+    body_apply_impulse_linear(b, accumulated_impulse);
+    body_apply_impulse_angular(b, vec2_cross(rb, accumulated_impulse));
 
     // compute bias term (baumgarte stabilization)
-    float beta = 0.2f;
-    float penetration_slop = 0.0005f; // 0.5 mm
+    float beta = 0.1f;
+    float penetration_slop = 0.005f;
     float restitution_slop = 0.5f; // 0.5 m/s
     Vec2 pb_pa = vec2_sub(pb, pa);
     float C = vec2_dot(pb_pa, normal); // positional error

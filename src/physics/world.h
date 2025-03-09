@@ -8,12 +8,13 @@
 #include "memory.h"
 
 typedef struct World {
-    float gravity;
     BodyArray bodies;
     JointConstraintArray joint_constraints;
     ManifoldArray manifolds;
     Vec2Array forces;
     FloatArray torques;
+    float gravity;
+    bool warm_start;
 } World;
 
 void world_free(World* world);

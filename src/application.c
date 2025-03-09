@@ -36,6 +36,7 @@ static float prev_time_fps = 0.0f;
 bool running;
 static bool paused = false;
 static bool debug = true;
+static bool warm_start = true;
 
 // private globals
 static World world;
@@ -79,16 +80,18 @@ static void demo_stack(void) {
 }
 
 static void demo_pyramid(void) {
-    int len_base = 12;
+    int len_base = 30;
     float x_center = WINDOW_WIDTH / 2.0;
     float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 40.0f;
+    float side_len = 30.0f;
     float x_start = x_center - (len_base / 2.0f) * side_len;
-    float y_offset = side_len * 0.25f;
+    /*float y_offset = side_len * 0.25f;*/
+    /*float x_offset = side_len * 1.125f;*/
+    float y_offset = side_len;
     float x_offset = side_len * 1.125f;
-    float y_start = ground - side_len / 2.0f - y_offset;
+    float y_start = ground - side_len / 2.0f; // - y_offset;
     for (int i = 0; i < len_base; i++) {
-        float y = y_start - i * (x_offset + y_offset);
+        float y = y_start - i * y_offset;
         float x_row = x_start + i * x_offset / 2.0f;
         for (int j = i; j < len_base; j++) {
             float x = x_row + (j - i) * x_offset;
@@ -98,11 +101,7 @@ static void demo_pyramid(void) {
             box->friction = 0.4;
         }
     }
-
 }
-
-// TODO: some demos work better with some values, check box2d
-// ex, stack of boxes better when using more penetration slop
 
 // values to check:
 // - fraction of lambda impulse to re-use (probably just use all)
@@ -110,7 +109,19 @@ static void demo_pyramid(void) {
 // - penetration slop
 // - restitution? For now set it 0
 
+// TODO: broad phase
+// TODO: collision islands
+// TODO: fixed timestep could solve a lot of problems (it works better with 144 fps, guess why)
+// TODO: breaking ball (constrained at the top) that destroys a pyramid could be a nice demo
+// TODO: zoom in and out with mouse wheel, ability to navigate the world this should be outside the scope of the physics engine though
+// TODO: map from my Vec2 type to raylib's Vector2 before rendering
+/*static Vector2[] Vec2_to_Vector2(Vec2Array* array) {*/
+/*}*/
+
+
+
 static void start_simulation(void) {
+    world.warm_start = warm_start;
     world.gravity = 9.8f; // y points down in screen space
 
     float x_center = WINDOW_WIDTH / 2.0;
@@ -137,6 +148,7 @@ static void start_simulation(void) {
     ceiling->friction = 0.2;
 
     demo_pyramid();
+    /*demo_stack();*/
 }
 
 void setup(void) {
@@ -167,6 +179,10 @@ void input(void) {
         paused = false;
         world_free(&world);
         start_simulation();
+    }
+    if (IsKeyPressed(KEY_W)) {
+        warm_start = !warm_start;
+        world.warm_start = warm_start;
     }
 
     /*world.bodies.items[5].position = mouse_coord;*/
@@ -203,12 +219,8 @@ void input(void) {
     }
 }
 
-// TODO: zoom in and out with mouse wheel, ability to navigate the world
-// this should be outside the scope of the physics engine though
-
 void update(void) {
     begin_frame();
-    // TODO: fix timestep
 
     static float prev_time = 0;
     // wait until target frame time is reached
@@ -242,10 +254,6 @@ void update(void) {
         world_update(&world, delta_time);
     }
 }
-
-// TODO: map from my Vec2 type to raylib's Vector2 before rendering
-/*static Vector2[] Vec2_to_Vector2(Vec2Array* array) {*/
-/*}*/
 
 void render(void) {
     if (!paused) {

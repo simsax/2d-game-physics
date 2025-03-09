@@ -93,7 +93,6 @@ void world_update(World* world, float dt) {
 
     // check collisions
     // TODO: do I even need the concept of a manifold, or can I just identify the contacts independently?
-    bool warm_start = true;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -110,7 +109,7 @@ void world_update(World* world, float dt) {
                 } 
                 manifold->expired = false;
                 bool persistent[2] = { false };
-                if (warm_start) {
+                if (world->warm_start) {
                     for (uint32_t c = 0; c < num_contacts; c++) {
                         persistent[c] = manifold_find_existing_contact(manifold, &contacts[c]);
                     }

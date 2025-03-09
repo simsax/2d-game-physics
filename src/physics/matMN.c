@@ -6,11 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
-// TODO: compare with cglm
-
 MatMN matMN_create(int num_rows, int num_cols, Arena* arena) {
     float* data = NULL;
-    // TODO: hack to compile my code
     if (arena != NULL) {
         data = arena_alloc(arena, sizeof(float) * num_rows * num_cols);
     } else {

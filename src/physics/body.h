@@ -10,6 +10,7 @@ typedef struct Body {
 
     // linear motion
     Vec2 position;
+    Vec2 prev_position;
     Vec2 velocity;
     Vec2 acceleration;
 

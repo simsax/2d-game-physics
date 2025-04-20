@@ -13,13 +13,16 @@ void world_free(World* world) {
         if (is_polygon) {
             DA_FREE(&body->shape.as.polygon.local_vertices);
             DA_FREE(&body->shape.as.polygon.world_vertices);
+            DA_FREE(&body->shape.as.polygon.prev_world_vertices);
         }
     }
-    for (uint32_t i = 0; i < world->joint_constraints.count; i++) {
-        constraint_joint_free(&world->joint_constraints.items[i]);
-    }
+
+    /*for (uint32_t i = 0; i < world->joint_constraints.count; i++) {*/
+    /*    constraint_joint_free(&world->joint_constraints.items[i]);*/
+    /*}*/
+    /*DA_FREE(&world->joint_constraints);*/
+
     DA_FREE(&world->bodies);
-    DA_FREE(&world->joint_constraints);
     DA_FREE(&world->manifolds);
     DA_FREE(&world->forces);
     DA_FREE(&world->torques);
@@ -29,9 +32,9 @@ Body* world_new_body(World* world) {
     return DA_NEXT_PTR(&world->bodies);
 }
 
-JointConstraint* world_new_joint_constraint(World* world) {
-    return DA_NEXT_PTR(&world->joint_constraints);
-}
+/*JointConstraint* world_new_joint_constraint(World* world) {*/
+/*    return DA_NEXT_PTR(&world->joint_constraints);*/
+/*}*/
 
 void world_add_force(World* world, Vec2 force) {
     DA_APPEND(&world->forces, force);
@@ -92,8 +95,6 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    // TODO: do I even need the concept of a manifold, or can I just identify the contacts independently?
-    bool warm_start = true;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -110,7 +111,7 @@ void world_update(World* world, float dt) {
                 } 
                 manifold->expired = false;
                 bool persistent[2] = { false };
-                if (warm_start) {
+                if (world->warm_start) {
                     for (uint32_t c = 0; c < num_contacts; c++) {
                         persistent[c] = manifold_find_existing_contact(manifold, &contacts[c]);
                     }
@@ -142,12 +143,12 @@ void world_update(World* world, float dt) {
     }
 
     // solve all constraints
-    for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
-        JointConstraint* constraint = &world->joint_constraints.items[c];
-        Body* a = &world->bodies.items[constraint->a_index];
-        Body* b = &world->bodies.items[constraint->b_index];
-        constraint_joint_pre_solve(constraint, a, b, dt);
-    }
+    /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
+    /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/
+    /*    Body* a = &world->bodies.items[constraint->a_index];*/
+    /*    Body* b = &world->bodies.items[constraint->b_index];*/
+    /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
+    /*}*/
     for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1) {
             Manifold* manifold = &world->manifolds.items[c];
@@ -155,12 +156,13 @@ void world_update(World* world, float dt) {
         }
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
-        for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
-            JointConstraint* constraint = &world->joint_constraints.items[c];
-            Body* a = &world->bodies.items[constraint->a_index];
-            Body* b = &world->bodies.items[constraint->b_index];
-            constraint_joint_solve(constraint, a, b);
-        }
+        // joint
+        /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
+        /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/
+        /*    Body* a = &world->bodies.items[constraint->a_index];*/
+        /*    Body* b = &world->bodies.items[constraint->b_index];*/
+        /*    constraint_joint_solve(constraint, a, b);*/
+        /*}*/
         for (uint32_t c = 0; c < world->manifolds.count; c++) {
             if (world->manifolds.items[c].a_index != -1) {
                 Manifold* manifold = &world->manifolds.items[c];

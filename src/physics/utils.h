@@ -4,6 +4,7 @@
 #include <math.h>
 
 #define FPS 60.0f
+#define FIXED_DT 0.007f
 #define SECS_PER_FRAME (1.0f / FPS)
 #define PIXELS_PER_METER 100.0f // 10.8 meters high for 1080p
 #define METERS_PER_PIXEL (1.0f / 100.0f)

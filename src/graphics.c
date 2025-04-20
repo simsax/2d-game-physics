@@ -121,15 +121,15 @@ void draw_fill_rect_meters(float x, float y, float width, float height, uint32_t
     DrawRectangle(meters_to_pixels(x), meters_to_pixels(y), meters_to_pixels(width), meters_to_pixels(height), GetColor(color));
 }
 
-void draw_polygon_meters(float x, float y, Vec2Array vertices, uint32_t color) {
-    for (uint32_t i = 0; i < vertices.count; i++) {
+void draw_polygon_meters(float x, float y, Vec2Array cur_vertices, Vec2Array prev_vertices, float alpha, uint32_t color) {
+    for (uint32_t i = 0; i < cur_vertices.count; i++) {
         int curr_index = i;
-        int next_index = (i + 1) % vertices.count;
+        int next_index = (i + 1) % cur_vertices.count;
         DrawLine(
-            meters_to_pixels(vertices.items[curr_index].x),
-            meters_to_pixels(vertices.items[curr_index].y),
-            meters_to_pixels(vertices.items[next_index].x),
-            meters_to_pixels(vertices.items[next_index].y),
+            meters_to_pixels(cur_vertices.items[curr_index].x * alpha + prev_vertices.items[curr_index].x * (1 - alpha)),
+            meters_to_pixels(cur_vertices.items[curr_index].y * alpha + prev_vertices.items[curr_index].y * (1 - alpha)),
+            meters_to_pixels(cur_vertices.items[next_index].x * alpha + prev_vertices.items[next_index].x * (1 - alpha)),
+            meters_to_pixels(cur_vertices.items[next_index].y * alpha + prev_vertices.items[next_index].y * (1 - alpha)),
             GetColor(color)
         );
     }
@@ -137,18 +137,20 @@ void draw_polygon_meters(float x, float y, Vec2Array vertices, uint32_t color) {
 }
 
 // NOTE: only works with convex polygons
-void draw_fill_polygon_meters(float x, float y, Vec2Array vertices, uint32_t color) {
+void draw_fill_polygon_meters(float x, float y, Vec2Array cur_vertices, Vec2Array prev_vertices, float alpha, uint32_t color) {
     Color tint = GetColor(color);
     rlBegin(RL_TRIANGLES);
         rlColor4ub(tint.r, tint.g, tint.b, tint.a);
 
         // iterate in reverse order because of backface culling
-        for (int i = (int)vertices.count - 1; i >= 0; i--)
+        for (int i = (int)cur_vertices.count - 1; i >= 0; i--)
         {
-            int next_index = i > 0 ? (i - 1) : ((int)vertices.count - 1);
+            int next_index = i > 0 ? (i - 1) : ((int)cur_vertices.count - 1);
             rlVertex2f(meters_to_pixels(x), meters_to_pixels(y)); // center
-            rlVertex2f(meters_to_pixels(vertices.items[i].x), meters_to_pixels(vertices.items[i].y)); // cur vertex
-            rlVertex2f(meters_to_pixels(vertices.items[next_index].x), meters_to_pixels(vertices.items[next_index].y)); // next vertex
+            rlVertex2f(meters_to_pixels(cur_vertices.items[i].x * alpha + prev_vertices.items[i].x * (1 - alpha)),
+                    meters_to_pixels(cur_vertices.items[i].y * alpha + prev_vertices.items[i].y * (1 - alpha))); // cur vertex
+            rlVertex2f(meters_to_pixels(cur_vertices.items[next_index].x * alpha + prev_vertices.items[next_index].x * (1 - alpha)),
+                    meters_to_pixels(cur_vertices.items[next_index].y * alpha + prev_vertices.items[next_index].y * (1 - alpha))); // next vertex
         }
     rlEnd();
 }

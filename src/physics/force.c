@@ -2,9 +2,6 @@
 #include "vec2.h"
 #include "utils.h"
 
-// TODO: in most functions we both calculate the magnitude and then normalize
-// some operations are repeated twice (es vec2_magnitude followed by vec2_normalize)
-
 Vec2 force_generate_drag(Body* body, float k) {
     Vec2 drag_force = VEC2(0, 0);
     float magnitude_squared = vec2_magnitude_squared(body->velocity);

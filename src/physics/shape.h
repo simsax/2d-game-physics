@@ -16,6 +16,7 @@ typedef struct {
 typedef struct {
     Vec2Array local_vertices;
     Vec2Array world_vertices;
+    Vec2Array prev_world_vertices;
 } PolygonShape;
 
 typedef struct {

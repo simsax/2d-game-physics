@@ -33,12 +33,9 @@ void draw_fill_circle_meters(float x, float y, float radius, uint32_t color);
 void draw_circle_line_meters(float x, float y, float radius, float angle, uint32_t color);
 void draw_rect_meters(float x, float y, float width, float height, uint32_t color);
 void draw_fill_rect_meters(float x, float y, float width, float height, uint32_t color);
-void draw_polygon_meters(float x, float y, Vec2Array vertices, uint32_t color);
-void draw_fill_polygon_meters(float x, float y, Vec2Array vertices, uint32_t color);
+void draw_polygon_meters(float x, float y, Vec2Array cur_vertices, Vec2Array prev_vertices, float alpha, uint32_t color);
+void draw_fill_polygon_meters(float x, float y, Vec2Array cur_vertices, Vec2Array prev_vertices, float alpha, uint32_t color);
 
-// TODO
-/*void draw_polygon(int x, int y, Vector2 vertices[], int count, uint32_t color);*/
-/*void draw_fill_polygon(int x, int y, Vector2 vertices[], int count, uint32_t color);*/
 void draw_texture(int x, int y, int width, int height, float rotation, Texture2D* texture);
 
 #endif // GRAPHICS_H

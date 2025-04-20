@@ -11,15 +11,18 @@ void shape_init_circle(Shape* shape, float radius) {
 
 void shape_init_polygon(Shape* shape, Vec2Array local_vertices) {
     Vec2Array world_vertices = DA_NULL;
+    Vec2Array prev_world_vertices = DA_NULL;
 
     for (uint32_t i = 0; i < local_vertices.count; i++) {
         DA_APPEND(&world_vertices, local_vertices.items[i]);
+        DA_APPEND(&prev_world_vertices, local_vertices.items[i]);
     }
 
     shape->type = POLYGON_SHAPE;
     shape->as.polygon = (PolygonShape) {
         .local_vertices = local_vertices,
         .world_vertices = world_vertices,
+        .prev_world_vertices = prev_world_vertices
     };
 }
 
@@ -41,11 +44,18 @@ void shape_init_box(Shape* shape, float width, float height) {
     DA_APPEND(&world_vertices, VEC2(half_width, half_height));
     DA_APPEND(&world_vertices, VEC2(-half_width, half_height));
 
+    Vec2Array prev_world_vertices = DA_NULL;
+    DA_APPEND(&prev_world_vertices, VEC2(-half_width, -half_height));
+    DA_APPEND(&prev_world_vertices, VEC2(half_width, -half_height));
+    DA_APPEND(&prev_world_vertices, VEC2(half_width, half_height));
+    DA_APPEND(&prev_world_vertices, VEC2(-half_width, half_height));
+
     shape->type = BOX_SHAPE;
     shape->as.box = (BoxShape) {
         .polygon = (PolygonShape) { 
             .local_vertices = local_vertices,
             .world_vertices = world_vertices,
+            .prev_world_vertices = prev_world_vertices
         },
         .width = width,
         .height = height
@@ -81,6 +91,7 @@ void shape_update_vertices(Shape* shape, float angle, Vec2 position) {
     PolygonShape* polygon_shape = &shape->as.polygon;
     // loop over all vertices and transform from local to world space
     for (uint32_t i = 0; i < polygon_shape->local_vertices.count; i++) {
+        polygon_shape->prev_world_vertices.items[i] = polygon_shape->world_vertices.items[i];
         // first rotate, then translate
         polygon_shape->world_vertices.items[i] = vec2_rotate(polygon_shape->local_vertices.items[i], angle);
         polygon_shape->world_vertices.items[i] = vec2_add(polygon_shape->world_vertices.items[i], position);

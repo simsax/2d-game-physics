@@ -9,6 +9,7 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     shape_init_circle(&body->shape, radius);
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -27,6 +28,10 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);
     shape_update_vertices(&body->shape, 0, body->position);
+    for (uint32_t i = 0; i < body->shape.as.polygon.world_vertices.count; i++) {
+        body->shape.as.polygon.prev_world_vertices.items[i] = body->shape.as.polygon.world_vertices.items[i];
+    }
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -45,6 +50,10 @@ void body_init_box(Body* body, float width, float height, int x, int y, float ma
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);
     shape_update_vertices(&body->shape, 0, body->position);
+    for (uint32_t i = 0; i < body->shape.as.polygon.world_vertices.count; i++) {
+        body->shape.as.polygon.prev_world_vertices.items[i] = body->shape.as.polygon.world_vertices.items[i];
+    }
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -62,6 +71,7 @@ void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass) {
     shape_init_circle(&body->shape, pixels_to_meters(radius));
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -81,9 +91,13 @@ void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, floa
         vertices.items[i] = VEC2(pixels_to_meters(v.x), pixels_to_meters(v.y));
     }
     shape_init_polygon(&body->shape, vertices);
+    for (uint32_t i = 0; i < body->shape.as.polygon.world_vertices.count; i++) {
+        body->shape.as.polygon.prev_world_vertices.items[i] = body->shape.as.polygon.world_vertices.items[i];
+    }
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
     shape_update_vertices(&body->shape, 0, body->position);
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -102,6 +116,10 @@ void body_init_box_pixels(Body* body, float width, float height, int x, int y, f
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
     shape_update_vertices(&body->shape, 0, body->position);
+    for (uint32_t i = 0; i < body->shape.as.polygon.world_vertices.count; i++) {
+        body->shape.as.polygon.prev_world_vertices.items[i] = body->shape.as.polygon.world_vertices.items[i];
+    }
+    body->prev_position = body->position;
     body->velocity = VEC2(0, 0);
     body->acceleration = VEC2(0, 0);
     body->rotation = 0;
@@ -154,6 +172,7 @@ void body_integrate_velocities(Body* body, float dt) {
     /*    return;*/
 
     // integrate velocities to find new position and rotation
+    body->prev_position = body->position;
     body->position = vec2_add(body->position, vec2_scale(body->velocity, dt));
     body->rotation += body->angular_velocity * dt;
 

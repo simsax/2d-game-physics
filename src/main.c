@@ -1,33 +1,27 @@
-#define _POSIX_C_SOURCE 199309L // required for clock_gettime under c99
 #include <raylib.h>
 
 #include "graphics.h"
-#include "physics/constraint.h"
 #include "physics/body.h"
 #include "physics/shape.h"
 #include "physics/utils.h"
 #include "physics/vec2.h"
 #include "physics/world.h"
-
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 
 #define SHOW_FPS 1
 
-// palette https://coolors.co/1a0f0d-392426-6b2c2e-925d5e-5d1816-251a1a-150705
-#define COLOR_BACKGROUND 0x282828FF
-#define COLOR_CIRCLE 0xB8BB26FF
-#define COLOR_BOX 0xD3869BFF
+// palette
+#define COLOR_BACKGROUND 0x181818FF
+#define COLOR_CIRCLE 0x9B9B9BFF
+#define COLOR_BOX 0x9B9B9BFF
+
+#define COLOR_GUI 0x000000FF
+#define COLOR_GUI_BUTTON 0x8C8C8CFF
+#define COLOR_GUI_BUTTON_HOVER 0xD1D1D1FF
+#define COLOR_GUI_TEXT 0xD1D1D1FF
 
 // globals
-#if SHOW_FPS
-
-static int frame_count = 0;
-static float prev_time_fps = 0.0f;
-
-#endif
 static bool running;
 static bool paused = false;
 static bool debug = true;
@@ -55,16 +49,6 @@ static int num_demos = 9;
 /*    return vertices;*/
 /*}*/
 /**/
-
-static double clock_timestamp(void) {
-    // returns timestamp in seconds since unix epoch
-    struct timespec t;
-    if (clock_gettime(CLOCK_REALTIME, &t) == -1) {
-        printf("ERROR: clock_gettime failed\n");
-        exit(1);
-    }
-    return (double)t.tv_sec + (double)t.tv_nsec * 1e-9;
-}
 
 static void demo_incline_plane(void) {
     float x_center = WINDOW_WIDTH / 2.0;
@@ -120,13 +104,9 @@ static void demo_pyramid(void) {
 
 // TODO: broad phase
 // TODO: collision islands
-// TODO: fixed timestep could solve a lot of problems (it works better with 144 fps, guess why)
 // TODO: breaking ball (constrained at the top) that destroys a pyramid could be a nice demo
 // TODO: zoom in and out with mouse wheel, ability to navigate the world this should be outside the scope of the physics engine though
-// TODO: map from my Vec2 type to raylib's Vector2 before rendering
-/*static Vector2[] Vec2_to_Vector2(Vec2Array* array) {*/
-/*}*/
-
+// TODO: simualtion with rotating motor
 
 
 static void start_simulation(void) {
@@ -161,7 +141,6 @@ static void start_simulation(void) {
 }
 
 static void setup(void) {
-    srand(time(NULL));
     open_window();
     running = true;
 
@@ -241,11 +220,11 @@ static void update(void) {
 
 static void render_gui(void) {
     int gui_left = WINDOW_WIDTH - gui_width;
-    DrawRectangle(gui_left, 0, gui_width, WINDOW_HEIGHT, BLACK);
+    DrawRectangle(gui_left, 0, gui_width, WINDOW_HEIGHT, GetColor(COLOR_GUI));
 
     int center_x = WINDOW_WIDTH - (float)gui_width / 2;
 
-    DrawText(TextFormat("Demos"), center_x - text_demos_size.x / 2, text_demos_size.y / 2, font_size, WHITE);
+    DrawText(TextFormat("Demos"), center_x - text_demos_size.x / 2, text_demos_size.y / 2, font_size, GetColor(COLOR_GUI_TEXT));
 
     int side_len = font_size * 1.6;
 
@@ -265,15 +244,15 @@ static void render_gui(void) {
             mouse_coord.y <= top_side + side_len
         );
 
-        Color color = RED;
+        Color color = GetColor(COLOR_GUI_BUTTON);
         if (is_hovering) {
-            color = WHITE;
+            color = GetColor(COLOR_GUI_BUTTON_HOVER);
             /*gui_hovering = true;*/
         } 
 
         DrawRectangle(left_side, top_side, side_len, side_len, color);
         int demo_num = i + 1;
-        DrawText(TextFormat("%d", demo_num), center_x - text_num_size.x / 2, center_y - text_num_size.y / 2, font_size, BLACK);
+        DrawText(TextFormat("%d", demo_num), center_x - text_num_size.x / 2, center_y - text_num_size.y / 2, font_size, GetColor(COLOR_GUI));
     }
 }
 
@@ -281,8 +260,12 @@ static void render(float alpha) {
     if (!paused) {
         // bodies
         for (uint32_t i = 0; i < world.bodies.count; i++) {
+            float body_alpha = alpha;
             Body* body = &world.bodies.items[i];
-            Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - alpha)), vec2_mult(body->position, alpha));
+            if (body_is_static(body)) {
+                body_alpha = 1;
+            }
+            Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
             if (body->shape.type == CIRCLE_SHAPE) {
                 /*if (!debug && body->texture.id) {*/
                 /*    float diameter = body->shape.as.circle.radius * 2;*/
@@ -299,15 +282,15 @@ static void render(float alpha) {
                 /*    draw_texture(render_position.x, render_position.y, box_shape->width,*/
                 /*            box_shape->height, body->rotation, &body->texture);*/
                 /*} else {*/
-                draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, alpha, COLOR_BOX);
+                draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, body_alpha, COLOR_BOX);
                 /*}*/
             }
             if (body->shape.type == POLYGON_SHAPE) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
                 if (!debug) {
-                    draw_fill_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, alpha, COLOR_BOX);
+                    draw_fill_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
                 } else {
-                    draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, alpha, COLOR_BOX);
+                    draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
                 }
             }
         }
@@ -329,6 +312,7 @@ static void render(float alpha) {
 
 static void run(void) {
     setup();
+    SetTargetFPS(144);
 
     while (running) {
         input();
@@ -343,42 +327,52 @@ static void run(void) {
             // new frame begins
             float cur_time = GetTime();
             float delta_time = cur_time - prev_time;
-            if (delta_time > SECS_PER_FRAME) {
+            if (delta_time > MIN_SECS_PER_FRAME) {
                 // cap delta_time so that this thing is debuggable
-                delta_time = SECS_PER_FRAME;
+                delta_time = MIN_SECS_PER_FRAME;
             }
             prev_time = cur_time;
 
             #if SHOW_FPS
-            static double start_ts = 0;
-            static double end_ts = 0;
-            {
-                frame_count++;
-                if (cur_time - prev_time_fps >= 1.0f) {
-                    double update_ms = (end_ts - start_ts) * 1000;
-                    double frame_ms = 1000.0 / frame_count;
-                    double update_frame_ratio = update_ms / frame_ms;
-                    printf("FPS: %d | Num objects: %d | Update ms: %.3f | Frame ms: %.3f | Update_ms / Frame_ms: %.3f\n",
-                            frame_count, world.bodies.count, update_ms, frame_ms, update_frame_ratio);
-                    frame_count = 0;
-                    prev_time_fps = cur_time;
-                }
+
+            static int frame_count = 0;
+            static float prev_time_fps = 0.0f;
+            static float start_ts = 0;
+            static float end_ts = 0;
+            static float update_ms = 0;
+
+            frame_count++;
+            if (cur_time - prev_time_fps >= 1.0f) {
+                update_ms /= frame_count;
+                float frame_ms = 1000.0f / frame_count;
+                float update_frame_ratio = update_ms / frame_ms;
+                printf("FPS: %d | Num objects: %d | Update ms: %.3f | Frame ms: %.3f | Update_ms / Frame_ms: %.3f\n",
+                        frame_count, world.bodies.count, (double)update_ms, (double)frame_ms, (double)update_frame_ratio);
+                frame_count = 0;
+                update_ms = 0;
+                prev_time_fps = cur_time;
             }
             #endif
 
             lag += delta_time;
+            #if SHOW_FPS
+            // TODO: measurings are wrong probably
+            start_ts = GetTime();
+            int num_updates = 0;
+            #endif
             while (!paused && lag >= FIXED_DT) {
                 // for debug draws
                 clear_screen(COLOR_BACKGROUND);
-            #if SHOW_FPS
-                start_ts = clock_timestamp();
-            #endif
                 world_update(&world, FIXED_DT);
-            #if SHOW_FPS
-                end_ts = clock_timestamp();
-            #endif
                 lag -= FIXED_DT;
+                #if SHOW_FPS
+                num_updates++; 
+                #endif
             }
+            #if SHOW_FPS
+            end_ts = GetTime();
+            update_ms += end_ts - start_ts;
+            #endif
         }
 
         float alpha = lag / FIXED_DT;

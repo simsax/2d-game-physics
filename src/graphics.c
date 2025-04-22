@@ -133,7 +133,7 @@ void draw_polygon_meters(float x, float y, Vec2Array cur_vertices, Vec2Array pre
             GetColor(color)
         );
     }
-    DrawCircle(meters_to_pixels(x), meters_to_pixels(y), 1, GetColor(color));
+    /*DrawCircle(meters_to_pixels(x), meters_to_pixels(y), 1, GetColor(color));*/
 }
 
 // NOTE: only works with convex polygons

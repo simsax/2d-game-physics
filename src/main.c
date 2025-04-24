@@ -11,7 +11,7 @@
 
 #define SHOW_FPS 1
 
-// palette
+// palette (https://lospec.com/palette-list/grayscale-16)
 #define COLOR_BACKGROUND 0x181818FF
 #define COLOR_CIRCLE 0x9B9B9BFF
 #define COLOR_BOX 0x9B9B9BFF
@@ -35,7 +35,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-
+static int current_demo = 0;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -96,6 +96,19 @@ static void demo_pyramid(void) {
     }
 }
 
+static void (*demos[9])(void) = {
+    demo_incline_plane,
+    demo_stack,
+    demo_pyramid,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+};
+    
+
 // values to check:
 // - fraction of lambda impulse to re-use (probably just use all)
 // - bias
@@ -109,7 +122,7 @@ static void demo_pyramid(void) {
 // TODO: simualtion with rotating motor
 
 
-static void start_simulation(void) {
+static void start_simulation(void (*demo)(void)) {
     world.warm_start = warm_start;
     world.gravity = 9.8f; // y points down in screen space
 
@@ -136,8 +149,7 @@ static void start_simulation(void) {
     ceiling->restitution = 0.8;
     ceiling->friction = 0.2;
 
-    demo_pyramid();
-    /*demo_stack();*/
+    demo();
 }
 
 static void setup(void) {
@@ -148,7 +160,7 @@ static void setup(void) {
     text_demos_size = MeasureTextEx(GetFontDefault(), "Demos", font_size, 1);
     text_num_size = MeasureTextEx(GetFontDefault(), "8", font_size, 1);
 
-    start_simulation();
+    start_simulation(demos[current_demo]);
 }
 
 static void destroy(void) {
@@ -171,7 +183,7 @@ static void input(void) {
     if (IsKeyPressed(KEY_R)) {
         paused = false;
         world_free(&world);
-        start_simulation();
+        start_simulation(demos[current_demo]);
     }
     if (IsKeyPressed(KEY_W)) {
         warm_start = !warm_start;
@@ -215,9 +227,6 @@ static void input(void) {
     }
 }
 
-static void update(void) {
-}
-
 static void render_gui(void) {
     int gui_left = WINDOW_WIDTH - gui_width;
     DrawRectangle(gui_left, 0, gui_width, WINDOW_HEIGHT, GetColor(COLOR_GUI));
@@ -247,7 +256,11 @@ static void render_gui(void) {
         Color color = GetColor(COLOR_GUI_BUTTON);
         if (is_hovering) {
             color = GetColor(COLOR_GUI_BUTTON_HOVER);
-            /*gui_hovering = true;*/
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && demos[i] != NULL) {
+                current_demo = i;
+                world_free(&world);
+                start_simulation(demos[current_demo]);
+            }
         } 
 
         DrawRectangle(left_side, top_side, side_len, side_len, color);

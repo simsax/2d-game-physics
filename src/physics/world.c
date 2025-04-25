@@ -6,6 +6,11 @@
 
 #define SOLVE_ITERATIONS 8
 
+void world_init(World* world, float gravity) {
+    world->gravity = gravity; // y points down in screen space
+    ht_init(&world->manifold_map, 16, 70);
+}
+
 void world_free(World* world) {
     for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
@@ -23,7 +28,7 @@ void world_free(World* world) {
     /*DA_FREE(&world->joint_constraints);*/
 
     DA_FREE(&world->bodies);
-    DA_FREE(&world->manifolds);
+    ht_free(&world->manifold_map);
     DA_FREE(&world->forces);
     DA_FREE(&world->torques);
 }
@@ -42,25 +47,6 @@ void world_add_force(World* world, Vec2 force) {
 
 void world_add_torque(World* world, float torque) {
     DA_APPEND(&world->torques, torque);
-}
-
-Manifold* world_manifold_next(World* world) {
-    for (uint32_t i = 0; i < world->manifolds.count; i++) {
-        Manifold* m = &world->manifolds.items[i];
-        if (m->a_index == -1) {
-            return m;
-        }
-    }
-    return DA_NEXT_PTR(&world->manifolds);
-}
-
-Manifold* world_manifold_find(World* world, int a_index, int b_index) {
-    for (uint32_t i = 0; i < world->manifolds.count; i++) {
-        Manifold* m = &world->manifolds.items[i];
-        if (m->a_index == a_index && m->b_index == b_index)
-            return m;
-    }
-    return NULL;
 }
 
 void world_update(World* world, float dt) {
@@ -89,11 +75,6 @@ void world_update(World* world, float dt) {
         body_integrate_forces(body, dt);
     }
 
-    // flag all the manifolds to be expired
-    for (uint32_t i = 0; i < world->manifolds.count; i++) {
-        world->manifolds.items[i].expired = true;
-    }
-
     // check collisions
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
@@ -103,42 +84,29 @@ void world_update(World* world, float dt) {
             uint32_t num_contacts = 0;
             if (collision_iscolliding(a, b, i, j, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
-                Manifold* manifold = world_manifold_find(world, i, j);
+                bool persistent[2] = { false };
+                Manifold* manifold = ht_get(&world->manifold_map, (Pair){i, j});
                 if (manifold == NULL) {
                     // create new manifold
-                    manifold = world_manifold_next(world);
-                    manifold_init(manifold, num_contacts, i, j);
-                } 
-                manifold->expired = false;
-                bool persistent[2] = { false };
-                if (world->warm_start) {
-                    for (uint32_t c = 0; c < num_contacts; c++) {
-                        persistent[c] = manifold_find_existing_contact(manifold, &contacts[c]);
+                    manifold = ht_set(&world->manifold_map, (Pair){i, j}, num_contacts);
+                } else {
+                    // manifold exists, check persistent contacts
+                    if (world->warm_start) {
+                        for (uint32_t c = 0; c < num_contacts; c++) {
+                            persistent[c] = manifold_find_existing_contact(manifold, &contacts[c]);
+                        }
                     }
-                }
+                } 
                 for (uint32_t c = 0; c < num_contacts; c++) {
-                    // draw collision points and normal
-                    /*draw_fill_circle_meters(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
-                    /*draw_fill_circle_meters(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
-                    /*Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));*/
-                    /*draw_line_pixels(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
-
                     // contact->end is pa, contact->start is pb, normal is from A to B
                     constraint_penetration_init(
                         &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index,
                         contacts[c].end, contacts[c].start, contacts[c].normal, persistent[c]);
                 }
                 manifold->num_contacts = num_contacts;
+            } else {
+                ht_remove(&world->manifold_map, (Pair){i, j});
             }
-        }
-    }
-
-    // delete expired manifold
-    for (uint32_t i = 0; i < world->manifolds.count; i++) {
-        Manifold* manifold = &world->manifolds.items[i];
-        if (manifold->expired && manifold->a_index != -1) {
-            // set -1 as special value for dead manifolds
-            manifold->a_index = -1;
         }
     }
 
@@ -149,10 +117,9 @@ void world_update(World* world, float dt) {
     /*    Body* b = &world->bodies.items[constraint->b_index];*/
     /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
     /*}*/
-    for (uint32_t c = 0; c < world->manifolds.count; c++) {
-        if (world->manifolds.items[c].a_index != -1) {
-            Manifold* manifold = &world->manifolds.items[c];
-            manifold_pre_solve(manifold, world->bodies, dt);
+    for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
+        if (world->manifold_map.buckets[c].occupied) {
+            manifold_pre_solve(&world->manifold_map.buckets[c].value, world->bodies, dt);
         }
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
@@ -163,12 +130,11 @@ void world_update(World* world, float dt) {
         /*    Body* b = &world->bodies.items[constraint->b_index];*/
         /*    constraint_joint_solve(constraint, a, b);*/
         /*}*/
-        for (uint32_t c = 0; c < world->manifolds.count; c++) {
-            if (world->manifolds.items[c].a_index != -1) {
-                Manifold* manifold = &world->manifolds.items[c];
-                manifold_solve(manifold, world->bodies);
-            }
+    for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
+        if (world->manifold_map.buckets[c].occupied) {
+            manifold_solve(&world->manifold_map.buckets[c].value, world->bodies);
         }
+    }
     }
 
     // integrate all velocities

@@ -6,7 +6,6 @@ void manifold_init(Manifold* manifold, int num_contacts, int a_index, int b_inde
     manifold->a_index = a_index;
     manifold->b_index = b_index;
     manifold->num_contacts = num_contacts;
-    manifold->expired = false;
 }
 
 bool manifold_find_existing_contact(Manifold* manifold, Contact* contact) {

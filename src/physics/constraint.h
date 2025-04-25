@@ -19,12 +19,12 @@ typedef struct {
     int b_index; // index of body B in the world's bodies array
     Vec2 a_collision_point; // collision point of A in world's space
     Vec2 b_collision_point; // collision point of B in world's space
+    Vec2 normal;
     float k_normal; // J*M_inv*Jt
     float k_tangent;
     float lambda_normal; // impulse magnitude along normal
     float lambda_tangent; // impulse magnitude along tangent
     float bias;
-    Vec2 normal;
     float friction; // friction coefficient between the two penetrating bodies
 } PenetrationConstraint;
 

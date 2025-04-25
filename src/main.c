@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "physics/body.h"
 #include "physics/shape.h"
+#include "physics/table.h"
 #include "physics/utils.h"
 #include "physics/vec2.h"
 #include "physics/world.h"
@@ -123,8 +124,8 @@ static void (*demos[9])(void) = {
 
 
 static void start_simulation(void (*demo)(void)) {
+    world_init(&world, 9.8f);
     world.warm_start = warm_start;
-    world.gravity = 9.8f; // y points down in screen space
 
     float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
@@ -155,7 +156,6 @@ static void start_simulation(void (*demo)(void)) {
 static void setup(void) {
     open_window();
     running = true;
-
 
     text_demos_size = MeasureTextEx(GetFontDefault(), "Demos", font_size, 1);
     text_num_size = MeasureTextEx(GetFontDefault(), "8", font_size, 1);
@@ -279,6 +279,7 @@ static void render(float alpha) {
                 body_alpha = 1;
             }
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
+            /*printf("render_pos: (%.2f, %.2f)\n", (double)render_position.x, (double)render_position.y);*/
             if (body->shape.type == CIRCLE_SHAPE) {
                 /*if (!debug && body->texture.id) {*/
                 /*    float diameter = body->shape.as.circle.radius * 2;*/
@@ -395,6 +396,32 @@ static void run(void) {
     destroy();
 }
 
+static void test_table(void) {
+    Table table;
+    ht_init(&table, 8, 70);
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            ht_set(&table, (Pair){i, j}, 2);
+        }
+    }
+
+    ht_print(&table);
+
+    ht_remove(&table, (Pair){1,3});
+    ht_remove(&table, (Pair){5,6});
+    ht_remove(&table, (Pair){0,1});
+
+    ht_print(&table);
+
+    ht_set(&table, (Pair){1,3}, 2);
+    ht_set(&table, (Pair){5,6}, 2);
+    ht_set(&table, (Pair){0,1}, 2);
+
+    ht_print(&table);
+}
+
+// TODO: test number of collisions and ratio as table grows maybe
 int main(void)
 {
     run();

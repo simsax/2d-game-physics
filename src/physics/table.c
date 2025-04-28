@@ -47,6 +47,10 @@ void ht_init(Table* table, uint32_t capacity, uint32_t load_factor) {
     table->buckets = NULL;
     table->load_factor = load_factor;
 
+#if DEBUG_TABLE
+    table->num_collisions = 0;
+#endif
+
     // init table
     table->capacity = capacity;
     table->buckets = CALLOC(table->capacity, sizeof *table->buckets);
@@ -79,6 +83,10 @@ static Bucket* ht_find(Table* table, Pair key, uint32_t hash) {
         } else if (bucket->key.i == key.i && bucket->key.j == key.j) {
             return bucket;
         }
+
+#if DEBUG_TABLE
+    table->num_collisions++;
+#endif
 
         // linear probing
         index += 1;

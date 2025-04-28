@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#define DEBUG_TABLE 1
+
 typedef struct {
     uint32_t i;
     uint32_t j;
@@ -22,6 +24,9 @@ typedef struct {
     uint32_t capacity;
     int load_factor;
     Bucket* buckets;
+#if DEBUG_TABLE
+    size_t num_collisions;
+#endif
 } Table;
 
 void ht_init(Table* table, uint32_t capacity, uint32_t load_factor);

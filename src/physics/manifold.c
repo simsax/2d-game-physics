@@ -29,8 +29,8 @@ bool manifold_find_existing_contact(Manifold* manifold, Contact* contact) {
 void manifold_pre_solve(Manifold* manifold, BodyArray world_bodies, float dt) {
     for (int i = 0; i < manifold->num_contacts; i++) {
         PenetrationConstraint* constraint = &manifold->constraints[i];
-        Body* a = &world_bodies.items[constraint->a_index];
-        Body* b = &world_bodies.items[constraint->b_index];
+        Body* a = &world_bodies.items[manifold->a_index];
+        Body* b = &world_bodies.items[manifold->b_index];
         constraint_penetration_pre_solve(constraint, a, b, dt);
     }
 }
@@ -38,8 +38,8 @@ void manifold_pre_solve(Manifold* manifold, BodyArray world_bodies, float dt) {
 void manifold_solve(Manifold* manifold, BodyArray world_bodies) {
     for (int i = 0; i < manifold->num_contacts; i++) {
         PenetrationConstraint* constraint = &manifold->constraints[i];
-        Body* a = &world_bodies.items[constraint->a_index];
-        Body* b = &world_bodies.items[constraint->b_index];
+        Body* a = &world_bodies.items[manifold->a_index];
+        Body* b = &world_bodies.items[manifold->b_index];
         constraint_penetration_solve(constraint, a, b);
     }
 }

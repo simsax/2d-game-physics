@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L // required for clock_gettime under c99
 #include <raylib.h>
 
 #include "graphics.h"
@@ -9,6 +10,7 @@
 #include "physics/world.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 
 #define SHOW_FPS 1
 
@@ -421,10 +423,53 @@ static void test_table(void) {
     ht_print(&table);
 }
 
-// TODO: test number of collisions and ratio as table grows maybe
+static double clock_timestamp(void) {
+    // returns timestamp in seconds since unix epoch
+    struct timespec t;
+    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1) {
+        printf("ERROR: clock_gettime failed\n");
+        exit(1);
+    }
+    return (double)t.tv_sec + (double)t.tv_nsec * 1e-9;
+}
+
+static void do_table_size(size_t table_size) {
+    Table table;
+    uint32_t load_factor = 70;
+    size_t to_add_max = table_size * load_factor / 100;
+    size_t to_add_sqrt = sqrt(to_add_max);
+
+    ht_init(&table, table_size, load_factor);
+
+    for (size_t i = 0; i < to_add_sqrt - 1; i++) {
+        for (size_t j = i; j < to_add_sqrt; j++) {
+            ht_set(&table, (Pair){i, j}, 2);
+        }
+    }
+
+    printf("Table size: %zu, count: %d, collisions: %zu, collisions / count: %.1f\n", table_size, table.count, table.num_collisions, (double)table.num_collisions / table.count);
+    ht_free(&table);
+}
+
+static void test_table_performance(void) {
+    double start_ts = clock_timestamp();
+    uint32_t table_size = 512;
+    for (int i = 0; i < 17; i++) {
+        do_table_size(table_size);
+        table_size *= 2;
+    }
+    double end_ts = clock_timestamp();
+    printf("Total generation took: %.3fs\n", end_ts - start_ts);
+}
+
 int main(void)
 {
+    srand(time(NULL));
+    /*test_table_performance();*/
     run();
     return 0;
 }
 
+// TODO: try very big pyramid, compare in release the array vs table
+// common sense should be that table should be faster in that case, otherwise I have a different problem...
+// but if the table is not the bottleneck, maybe that's not gonna be detected... Idk

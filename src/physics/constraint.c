@@ -22,9 +22,7 @@
 /*    };*/
 /*}*/
 
-void constraint_penetration_init(PenetrationConstraint* constraint, int a_index, int b_index, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent) {
-    constraint->a_index = a_index;
-    constraint->b_index = b_index;
+void constraint_penetration_init(PenetrationConstraint* constraint, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent) {
     constraint->a_collision_point = a_collision_point;
     constraint->b_collision_point = b_collision_point;
     constraint->normal = normal;

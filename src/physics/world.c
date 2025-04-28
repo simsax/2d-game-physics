@@ -82,7 +82,7 @@ void world_update(World* world, float dt) {
             Body* b = &world->bodies.items[j];
             Contact contacts[2];
             uint32_t num_contacts = 0;
-            if (collision_iscolliding(a, b, i, j, contacts, &num_contacts)) {
+            if (collision_iscolliding(a, b, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
                 bool persistent[2] = { false };
                 Manifold* manifold = ht_get(&world->manifold_map, (Pair){i, j});
@@ -100,8 +100,7 @@ void world_update(World* world, float dt) {
                 for (uint32_t c = 0; c < num_contacts; c++) {
                     // contact->end is pa, contact->start is pb, normal is from A to B
                     constraint_penetration_init(
-                        &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index,
-                        contacts[c].end, contacts[c].start, contacts[c].normal, persistent[c]);
+                        &manifold->constraints[c], contacts[c].end, contacts[c].start, contacts[c].normal, persistent[c]);
                 }
                 manifold->num_contacts = num_contacts;
             } else {

@@ -136,7 +136,7 @@ void world_update(World* world, float dt) {
     }
     double ts_end = GetTime();
 
-    printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);
+    /*printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);*/
 
     // delete expired manifold
     for (uint32_t i = 0; i < world->manifolds.count; i++) {
@@ -154,6 +154,7 @@ void world_update(World* world, float dt) {
     /*    Body* b = &world->bodies.items[constraint->b_index];*/
     /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
     /*}*/
+    ts_start = GetTime();
     for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1) {
             Manifold* manifold = &world->manifolds.items[c];
@@ -175,6 +176,8 @@ void world_update(World* world, float dt) {
             }
         }
     }
+    ts_end = GetTime();
+    printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);
 
     // integrate all velocities
     for (uint32_t i = 0; i < world->bodies.count; i++) {

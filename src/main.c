@@ -353,42 +353,24 @@ static void run(void) {
 
             static int frame_count = 0;
             static float prev_time_fps = 0.0f;
-            static float start_ts = 0;
-            static float end_ts = 0;
-            static float update_ms = 0;
 
             frame_count++;
             if (cur_time - prev_time_fps >= 1.0f) {
-                update_ms /= frame_count;
                 float frame_ms = 1000.0f / frame_count;
-                float update_frame_ratio = update_ms / frame_ms;
-                printf("FPS: %d | Num objects: %d | Update ms: %.3f | Frame ms: %.3f | Update_ms / Frame_ms: %.3f\n",
-                        frame_count, world.bodies.count, (double)update_ms, (double)frame_ms, (double)update_frame_ratio);
+                printf("FPS: %d | Num objects: %d | Num manifolds: %d | \n",
+                        frame_count, world.bodies.count, world.manifold_map.count);
                 frame_count = 0;
-                update_ms = 0;
                 prev_time_fps = cur_time;
             }
             #endif
 
             lag += delta_time;
-            #if SHOW_FPS
-            // TODO: measurings are wrong probably
-            start_ts = GetTime();
-            int num_updates = 0;
-            #endif
             while (!paused && lag >= FIXED_DT) {
                 // for debug draws
                 clear_screen(COLOR_BACKGROUND);
                 world_update(&world, FIXED_DT);
                 lag -= FIXED_DT;
-                #if SHOW_FPS
-                num_updates++; 
-                #endif
             }
-            #if SHOW_FPS
-            end_ts = GetTime();
-            update_ms += end_ts - start_ts;
-            #endif
         }
 
         float alpha = lag / FIXED_DT;
@@ -447,7 +429,9 @@ static void do_table_size(size_t table_size) {
         }
     }
 
+#if DEBUG_TABLE
     printf("Table size: %zu, count: %d, collisions: %zu, collisions / count: %.1f\n", table_size, table.count, table.num_collisions, (double)table.num_collisions / table.count);
+#endif
     ht_free(&table);
 }
 
@@ -464,7 +448,7 @@ static void test_table_performance(void) {
 
 int main(void)
 {
-    srand(time(NULL));
+    /*srand(time(NULL));*/
     /*test_table_performance();*/
     run();
     return 0;

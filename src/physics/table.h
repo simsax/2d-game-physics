@@ -6,7 +6,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define DEBUG_TABLE 1
+#define DEBUG_TABLE 0
 
 typedef struct {
     uint32_t i;
@@ -34,6 +34,7 @@ void ht_free(Table* table);
 bool ht_remove(Table* table, Pair key);
 Manifold* ht_get(Table* table, Pair key);
 Manifold* ht_set(Table* table, Pair key, uint32_t num_contacts);
+Manifold* ht_get_or_new(Table* table, Pair key, uint32_t num_contacts, bool* found);
 
 // debug
 void ht_print(Table* table);

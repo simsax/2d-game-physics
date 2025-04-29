@@ -67,7 +67,6 @@ void ht_free(Table* table) {
 static Bucket* ht_find(Table* table, Pair key, uint32_t hash) {
     uint32_t index = hash & (table->capacity - 1); // mod of 2^n is equal to the last n bits
 
-    int num_iterations = 0;
     Bucket* tombstone = NULL;
     for (;;) {
         Bucket* bucket = &table->buckets[index];
@@ -89,11 +88,7 @@ static Bucket* ht_find(Table* table, Pair key, uint32_t hash) {
 #endif
 
         // linear probing
-        index += 1;
-
-        // quadratic probing
-        /*index += 1 << num_iterations++;*/
-        index &= (table->capacity - 1);
+        index = (index + 1) & (table->capacity - 1);
     }
 }
 
@@ -139,6 +134,34 @@ Manifold* ht_set(Table* table, Pair key, uint32_t num_contacts) {
     bucket->occupied = true;
     return &bucket->value;
 }
+
+Manifold* ht_get_or_new(Table* table, Pair key, uint32_t num_contacts, bool* found) {
+    // tries to find manifold, if not found create a new one
+    if (CALC_LOAD_FACTOR(table) >= table->load_factor) {
+        ht_grow(table);
+    }
+
+    uint32_t hash = hash_pair(key);
+    Bucket* bucket = ht_find(table, key, hash);
+
+    if (bucket->occupied) {
+        *found = true;
+        return &bucket->value;
+    }
+
+    *found = false;
+
+    if (!bucket->occupied && bucket->value.num_contacts == 0) {
+        // new item
+        table->count++;
+    }
+    
+    bucket->key = key;
+    manifold_init(&bucket->value, num_contacts, key.i, key.j);
+    bucket->occupied = true;
+    return &bucket->value;
+}
+
 
 void ht_print(Table* table) {
     printf("===== TABLE =====\n");

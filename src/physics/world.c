@@ -3,6 +3,7 @@
 #include "constraint.h"
 #include "collision.h"
 #include "manifold.h"
+#include <raylib.h>
 
 #define SOLVE_ITERATIONS 8
 
@@ -95,6 +96,7 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
+    double ts_start = GetTime();
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -132,6 +134,9 @@ void world_update(World* world, float dt) {
             }
         }
     }
+    double ts_end = GetTime();
+
+    printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);
 
     // delete expired manifold
     for (uint32_t i = 0; i < world->manifolds.count; i++) {

@@ -106,6 +106,11 @@ bool ht_remove(Table* table, Pair key) {
     return true;
 }
 
+void ht_remove_bucket(Bucket* bucket) {
+    bucket->occupied = false;
+    bucket->value.num_contacts = 1;
+}
+
 Manifold* ht_get(Table* table, Pair key) {
     if (table->count == 0)
         return NULL;

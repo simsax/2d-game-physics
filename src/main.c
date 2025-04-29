@@ -357,7 +357,7 @@ static void run(void) {
             frame_count++;
             if (cur_time - prev_time_fps >= 1.0f) {
                 float frame_ms = 1000.0f / frame_count;
-                printf("FPS: %d | Num objects: %d | Num manifolds: %d | \n",
+                printf("FPS: %d | Num objects: %d | Num manifolds: %d\n",
                         frame_count, world.bodies.count, world.manifold_map.count);
                 frame_count = 0;
                 prev_time_fps = cur_time;

@@ -32,6 +32,7 @@ typedef struct {
 void ht_init(Table* table, uint32_t capacity, uint32_t load_factor);
 void ht_free(Table* table);
 bool ht_remove(Table* table, Pair key);
+void ht_remove_bucket(Bucket* bucket);
 Manifold* ht_get(Table* table, Pair key);
 Manifold* ht_set(Table* table, Pair key, uint32_t num_contacts);
 Manifold* ht_get_or_new(Table* table, Pair key, uint32_t num_contacts, bool* found);

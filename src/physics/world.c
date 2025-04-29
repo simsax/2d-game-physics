@@ -76,8 +76,13 @@ void world_update(World* world, float dt) {
         body_integrate_forces(body, dt);
     }
 
+    // array implementation takes 2.4ms while this one is 3.7ms, how the fuck?
+    // without ht.remove it's 2.2ms, not worth it?
+    
+    // TODO >>>>>>>>>>>>>>>>>>>>> benchmark ht_get_or_new vs find with a lot of bodies
+
     // check collisions
-    double ts_start = GetTime();
+    /*double ts_start = GetTime();*/
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -87,9 +92,9 @@ void world_update(World* world, float dt) {
             if (collision_iscolliding(a, b, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
                 bool persistent[2] = { false };
-                // TODO: avoid double find in get and set, use a single method
                 bool found = false;
                 Manifold* manifold = ht_get_or_new(&world->manifold_map, (Pair){i, j}, num_contacts, &found);
+                manifold->expired = false;
                 if (found) {
                     // manifold exists, check persistent contacts
                     if (world->warm_start) {
@@ -104,15 +109,12 @@ void world_update(World* world, float dt) {
                         &manifold->constraints[c], contacts[c].end, contacts[c].start, contacts[c].normal, persistent[c]);
                 }
                 manifold->num_contacts = num_contacts;
-            } else {
-                // TODO: actually costly
-                ht_remove(&world->manifold_map, (Pair){i, j});
-            }
+            } 
         }
     }
-    double ts_end = GetTime();
+    /*double ts_end = GetTime();*/
 
-    printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);
+    /*printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);*/
 
     // solve all constraints
     /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
@@ -123,11 +125,16 @@ void world_update(World* world, float dt) {
     /*}*/
 
 
-    // TODO: iterating over such a big boy must be slow as fuck mate
-    // also, can you make this branchless?
+    /*ts_start = GetTime();*/
     for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
-        if (world->manifold_map.buckets[c].occupied) {
-            manifold_pre_solve(&world->manifold_map.buckets[c].value, world->bodies, dt);
+        Bucket* bucket = &world->manifold_map.buckets[c];
+        if (bucket->occupied) {
+            if (!bucket->value.expired) {
+                manifold_pre_solve(&world->manifold_map.buckets[c].value, world->bodies, dt);
+                bucket->value.expired = true;
+            } else {
+                ht_remove_bucket(bucket);
+            }
         }
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
@@ -144,6 +151,8 @@ void world_update(World* world, float dt) {
             }
         }
     }
+    /*ts_end = GetTime();*/
+    /*printf("Solve time: %fms\n", (ts_end - ts_start) * 1000);*/
 
     // integrate all velocities
     for (uint32_t i = 0; i < world->bodies.count; i++) {

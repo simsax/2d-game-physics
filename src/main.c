@@ -38,7 +38,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-static int current_demo = 1;
+static int current_demo = 2;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -53,7 +53,35 @@ static int current_demo = 1;
 /*}*/
 /**/
 
+static void create_walls(void) {
+    // walls are defined in pixel units because it's easier to place them on the screen like this
+    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
+    float y_center = WINDOW_HEIGHT / 2.0;
+
+    Body* floor = world_new_body(&world);
+    body_init_box_pixels(floor, WINDOW_WIDTH - 50 - gui_width, 50, x_center, WINDOW_HEIGHT - 50, 0.0f);
+    floor->restitution = 0.8;
+    floor->friction = 0.8;
+
+    Body* left_wall = world_new_body(&world);
+    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0f);
+    left_wall->restitution = 0.8;
+    left_wall->friction = 0.2;
+
+    Body* right_wall = world_new_body(&world); 
+    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50 - gui_width, WINDOW_HEIGHT / 2, 0.0f);
+    right_wall->restitution = 0.8;
+    right_wall->friction = 0.2;
+
+    Body* ceiling = world_new_body(&world);
+    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50 - gui_width, 50, x_center, 50, 0.0f);
+    ceiling->restitution = 0.8;
+    ceiling->friction = 0.2;
+}
+
 static void demo_incline_plane(void) {
+    PIXELS_PER_METER = 100;
+    create_walls();
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     Body* static_box = world_new_body(&world);
@@ -64,27 +92,31 @@ static void demo_incline_plane(void) {
 }
 
 static void demo_stack(void) {
-    float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0);
-    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
-    float side_len = 1.0f; // 1 meter
+    PIXELS_PER_METER = 100;
+    create_walls();
+    float x_center = WINDOW_WIDTH / 2.0;
+    float ground = WINDOW_HEIGHT - 75.0f;
+    float side_len = 80.0f;
     for (int i = 0; i < 10; i++) {
         Body* box = world_new_body(&world);
-        body_init_box(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        body_init_box_pixels(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
         box->restitution = 0.0;
         box->friction = 0.2;
     }
 }
 
 static void demo_pyramid(void) {
+    PIXELS_PER_METER = 20;
+    create_walls();
     int len_base = 30;
-    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
-    float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 30.0f;
+    float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
+    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
+    float side_len = 1.0f; // 1 meter
     float x_start = x_center - (len_base / 2.0f) * side_len;
     /*float y_offset = side_len * 0.25f;*/
     /*float x_offset = side_len * 1.125f;*/
     float y_offset = side_len;
-    float x_offset = side_len * 1.125f;
+    float x_offset = side_len * 1.124f;
     float y_start = ground - side_len / 2.0f; // - y_offset;
     for (int i = 0; i < len_base; i++) {
         float y = y_start - i * y_offset;
@@ -92,12 +124,13 @@ static void demo_pyramid(void) {
         for (int j = i; j < len_base; j++) {
             float x = x_row + (j - i) * x_offset;
             Body* box = world_new_body(&world);
-            body_init_box_pixels(box, side_len, side_len, x, y, 1.0);
+            body_init_box(box, side_len, side_len, x, y, 1.0);
             box->restitution = 0.0;
             box->friction = 0.4;
         }
     }
 }
+
 
 static void (*demos[9])(void) = {
     demo_incline_plane,
@@ -128,30 +161,6 @@ static void (*demos[9])(void) = {
 static void start_simulation(void (*demo)(void)) {
     world_init(&world, 9.8f);
     world.warm_start = warm_start;
-
-    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
-    float y_center = WINDOW_HEIGHT / 2.0;
-
-    Body* floor = world_new_body(&world);
-    body_init_box_pixels(floor, WINDOW_WIDTH - 50 - gui_width, 50, x_center, WINDOW_HEIGHT - 50, 0.0f);
-    floor->restitution = 0.8;
-    floor->friction = 0.8;
-
-    Body* left_wall = world_new_body(&world);
-    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0f);
-    left_wall->restitution = 0.8;
-    left_wall->friction = 0.2;
-
-    Body* right_wall = world_new_body(&world); 
-    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50 - gui_width, WINDOW_HEIGHT / 2, 0.0f);
-    right_wall->restitution = 0.8;
-    right_wall->friction = 0.2;
-
-    Body* ceiling = world_new_body(&world);
-    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50 - gui_width, 50, x_center, 50, 0.0f);
-    ceiling->restitution = 0.8;
-    ceiling->friction = 0.2;
-
     demo();
 }
 

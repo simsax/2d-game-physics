@@ -76,9 +76,6 @@ void world_update(World* world, float dt) {
         body_integrate_forces(body, dt);
     }
 
-    // array implementation takes 2.4ms while this one is 3.7ms, how the fuck?
-    // without ht.remove it's 2.2ms, not worth it?
-    
     // TODO >>>>>>>>>>>>>>>>>>>>> benchmark ht_get_or_new vs find with a lot of bodies
 
     // check collisions

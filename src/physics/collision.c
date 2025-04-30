@@ -20,7 +20,17 @@ bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_co
         return collision_iscolliding_polygoncircle(a, b, contacts, num_contacts);
     }
     if (a_is_circle && b_is_polygon) {
-        return collision_iscolliding_polygoncircle(b, a, contacts, num_contacts);
+        bool colliding = collision_iscolliding_polygoncircle(b, a, contacts, num_contacts);
+
+        // in this case, we have to swap start, end and normal
+        if (colliding) {
+            Vec2 temp = contacts->start;
+            contacts->start = contacts->end;
+            contacts->end = temp;
+            contacts->normal = vec2_mult(contacts->normal, -1);
+        }
+
+        return colliding;
     }
     return false;
 }

@@ -38,7 +38,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-static int current_demo = 0;
+static int current_demo = 1;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -64,12 +64,12 @@ static void demo_incline_plane(void) {
 }
 
 static void demo_stack(void) {
-    float x_center = WINDOW_WIDTH / 2.0;
-    float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 80.0f;
+    float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0);
+    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
+    float side_len = 1.0f; // 1 meter
     for (int i = 0; i < 10; i++) {
         Body* box = world_new_body(&world);
-        body_init_box_pixels(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        body_init_box(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
         box->restitution = 0.0;
         box->friction = 0.2;
     }
@@ -175,7 +175,6 @@ static void input(void) {
         running = false;
     }
 
-    /*const float force = 50 * PIXELS_PER_METER;*/
     if (IsKeyPressed(KEY_D)) {
         debug = !debug;
     }

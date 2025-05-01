@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 
-void body_init_circle(Body* body, float radius, int x, int y, float mass) {
+void body_init_circle(Body* body, float radius, float x, float y, float mass) {
     shape_init_circle(&body->shape, radius);
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);
@@ -23,7 +23,7 @@ void body_init_circle(Body* body, float radius, int x, int y, float mass) {
     body->friction = 0.7f;
 }
 
-void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass) {
+void body_init_polygon(Body* body, Vec2Array vertices, float x, float y, float mass) {
     shape_init_polygon(&body->shape, vertices);
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);
@@ -45,7 +45,7 @@ void body_init_polygon(Body* body, Vec2Array vertices, int x, int y, float mass)
     body->friction = 0.7f;
 }
 
-void body_init_box(Body* body, float width, float height, int x, int y, float mass) {
+void body_init_box(Body* body, float width, float height, float x, float y, float mass) {
     shape_init_box(&body->shape, width, height);
     float I = shape_moment_of_inertia(&body->shape) * mass;
     body->position = VEC2(x, y);

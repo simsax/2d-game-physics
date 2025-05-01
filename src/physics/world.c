@@ -7,6 +7,10 @@
 
 #define SOLVE_ITERATIONS 8
 
+void world_init(World* world, float gravity) {
+    world->gravity = gravity;
+}
+
 void world_free(World* world) {
     for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
@@ -96,7 +100,7 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    double ts_start = GetTime();
+    /*double ts_start = GetTime();*/
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -134,7 +138,7 @@ void world_update(World* world, float dt) {
             }
         }
     }
-    double ts_end = GetTime();
+    /*double ts_end = GetTime();*/
 
     /*printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);*/
 
@@ -154,7 +158,6 @@ void world_update(World* world, float dt) {
     /*    Body* b = &world->bodies.items[constraint->b_index];*/
     /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
     /*}*/
-    ts_start = GetTime();
     for (uint32_t c = 0; c < world->manifolds.count; c++) {
         if (world->manifolds.items[c].a_index != -1) {
             Manifold* manifold = &world->manifolds.items[c];
@@ -176,8 +179,6 @@ void world_update(World* world, float dt) {
             }
         }
     }
-    ts_end = GetTime();
-    printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);
 
     // integrate all velocities
     for (uint32_t i = 0; i < world->bodies.count; i++) {

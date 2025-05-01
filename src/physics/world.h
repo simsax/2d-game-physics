@@ -18,6 +18,7 @@ typedef struct World {
 } World;
 
 void world_free(World* world);
+void world_init(World* world, float gravity);
 Body* world_new_body(World* world);
 /*JointConstraint* world_new_joint_constraint(World* world);*/
 void world_add_force(World* world, Vec2 force);

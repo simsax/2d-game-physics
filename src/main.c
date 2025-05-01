@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 199309L // required for clock_gettime under c99
 #include <raylib.h>
 
 #include "graphics.h"
@@ -8,6 +9,7 @@
 #include "physics/world.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 
 #define SHOW_FPS 1
 
@@ -35,7 +37,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-static int current_demo = 0;
+static int current_demo = 2;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -50,7 +52,34 @@ static int current_demo = 0;
 /*}*/
 /**/
 
+static void create_walls(void) {
+    // walls are defined in pixel units because it's easier to place them on the screen like this
+    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
+    float y_center = WINDOW_HEIGHT / 2.0;
+
+    Body* floor = world_new_body(&world);
+    body_init_box_pixels(floor, WINDOW_WIDTH - 50 - gui_width, 50, x_center, WINDOW_HEIGHT - 50, 0.0f);
+    floor->restitution = 0.8;
+    floor->friction = 0.8;
+
+    Body* left_wall = world_new_body(&world);
+    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0f);
+    left_wall->restitution = 0.8;
+    left_wall->friction = 0.2;
+
+    Body* right_wall = world_new_body(&world); 
+    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50 - gui_width, WINDOW_HEIGHT / 2, 0.0f);
+    right_wall->restitution = 0.8;
+    right_wall->friction = 0.2;
+
+    Body* ceiling = world_new_body(&world);
+    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50 - gui_width, 50, x_center, 50, 0.0f);
+    ceiling->restitution = 0.8;
+    ceiling->friction = 0.2;
+}
+
 static void demo_incline_plane(void) {
+    create_walls();
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
     Body* static_box = world_new_body(&world);
@@ -61,40 +90,47 @@ static void demo_incline_plane(void) {
 }
 
 static void demo_stack(void) {
-    float x_center = WINDOW_WIDTH / 2.0;
-    float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 80.0f;
+    create_walls();
+    float x_center = pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f);
+    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
+    float side_len = 0.5f;
+    float y_center = ground - side_len / 2.0f;
+    draw_fill_circle_meters(x_center, ground, 4, 0xFF0000FF);
+    draw_circle_pixels((WINDOW_WIDTH - gui_width) / 2.0f, WINDOW_HEIGHT - 75.0f, 4, 0x00FF00FF);
     for (int i = 0; i < 10; i++) {
         Body* box = world_new_body(&world);
-        body_init_box_pixels(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        body_init_box(box, side_len, side_len, x_center, y_center - i * side_len, 1.0);
         box->restitution = 0.0;
         box->friction = 0.2;
     }
 }
 
 static void demo_pyramid(void) {
-    int len_base = 30;
-    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
-    float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 30.0f;
+    PIXELS_PER_METER = 10;
+    create_walls();
+    int len_base = 60;
+    float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
+    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
+    float side_len = 1.0f; // 1 meter
     float x_start = x_center - (len_base / 2.0f) * side_len;
     /*float y_offset = side_len * 0.25f;*/
     /*float x_offset = side_len * 1.125f;*/
     float y_offset = side_len;
-    float x_offset = side_len * 1.125f;
-    float y_start = ground - side_len / 2.0f; // - y_offset;
+    float x_offset = side_len * 1.126f;
+    float y_start = ground - side_len / 2.0f;// - y_offset;
     for (int i = 0; i < len_base; i++) {
         float y = y_start - i * y_offset;
         float x_row = x_start + i * x_offset / 2.0f;
         for (int j = i; j < len_base; j++) {
             float x = x_row + (j - i) * x_offset;
             Body* box = world_new_body(&world);
-            body_init_box_pixels(box, side_len, side_len, x, y, 1.0);
+            body_init_box(box, side_len, side_len, x, y, 1.0);
             box->restitution = 0.0;
             box->friction = 0.4;
         }
     }
 }
+
 
 static void (*demos[9])(void) = {
     demo_incline_plane,
@@ -123,39 +159,15 @@ static void (*demos[9])(void) = {
 
 
 static void start_simulation(void (*demo)(void)) {
+    PIXELS_PER_METER = 100.0f; // default value
+    world_init(&world, 9.8f);
     world.warm_start = warm_start;
-    world.gravity = 9.8f; // y points down in screen space
-
-    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
-    float y_center = WINDOW_HEIGHT / 2.0;
-
-    Body* floor = world_new_body(&world);
-    body_init_box_pixels(floor, WINDOW_WIDTH - 50 - gui_width, 50, x_center, WINDOW_HEIGHT - 50, 0.0f);
-    floor->restitution = 0.8;
-    floor->friction = 0.8;
-
-    Body* left_wall = world_new_body(&world);
-    body_init_box_pixels(left_wall, 50, WINDOW_HEIGHT - 150, 50, WINDOW_HEIGHT / 2, 0.0f);
-    left_wall->restitution = 0.8;
-    left_wall->friction = 0.2;
-
-    Body* right_wall = world_new_body(&world); 
-    body_init_box_pixels(right_wall, 50, WINDOW_HEIGHT - 150, WINDOW_WIDTH - 50 - gui_width, WINDOW_HEIGHT / 2, 0.0f);
-    right_wall->restitution = 0.8;
-    right_wall->friction = 0.2;
-
-    Body* ceiling = world_new_body(&world);
-    body_init_box_pixels(ceiling, WINDOW_WIDTH - 50 - gui_width, 50, x_center, 50, 0.0f);
-    ceiling->restitution = 0.8;
-    ceiling->friction = 0.2;
-
     demo();
 }
 
 static void setup(void) {
     open_window();
     running = true;
-
 
     text_demos_size = MeasureTextEx(GetFontDefault(), "Demos", font_size, 1);
     text_num_size = MeasureTextEx(GetFontDefault(), "8", font_size, 1);
@@ -173,7 +185,6 @@ static void input(void) {
         running = false;
     }
 
-    /*const float force = 50 * PIXELS_PER_METER;*/
     if (IsKeyPressed(KEY_D)) {
         debug = !debug;
     }
@@ -279,6 +290,7 @@ static void render(float alpha) {
                 body_alpha = 1;
             }
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
+            /*printf("render_pos: (%.2f, %.2f)\n", (double)render_position.x, (double)render_position.y);*/
             if (body->shape.type == CIRCLE_SHAPE) {
                 /*if (!debug && body->texture.id) {*/
                 /*    float diameter = body->shape.as.circle.radius * 2;*/
@@ -350,42 +362,24 @@ static void run(void) {
 
             static int frame_count = 0;
             static float prev_time_fps = 0.0f;
-            static float start_ts = 0;
-            static float end_ts = 0;
-            static float update_ms = 0;
 
             frame_count++;
             if (cur_time - prev_time_fps >= 1.0f) {
-                update_ms /= frame_count;
                 float frame_ms = 1000.0f / frame_count;
-                float update_frame_ratio = update_ms / frame_ms;
-                printf("FPS: %d | Num objects: %d | Update ms: %.3f | Frame ms: %.3f | Update_ms / Frame_ms: %.3f\n",
-                        frame_count, world.bodies.count, (double)update_ms, (double)frame_ms, (double)update_frame_ratio);
+                printf("FPS: %d | Num objects: %d | Num manifolds: %d\n",
+                        frame_count, world.bodies.count, world.manifolds.count);
                 frame_count = 0;
-                update_ms = 0;
                 prev_time_fps = cur_time;
             }
             #endif
 
             lag += delta_time;
-            #if SHOW_FPS
-            // TODO: measurings are wrong probably
-            start_ts = GetTime();
-            int num_updates = 0;
-            #endif
             while (!paused && lag >= FIXED_DT) {
                 // for debug draws
                 clear_screen(COLOR_BACKGROUND);
                 world_update(&world, FIXED_DT);
                 lag -= FIXED_DT;
-                #if SHOW_FPS
-                num_updates++; 
-                #endif
             }
-            #if SHOW_FPS
-            end_ts = GetTime();
-            update_ms += end_ts - start_ts;
-            #endif
         }
 
         float alpha = lag / FIXED_DT;
@@ -394,6 +388,7 @@ static void run(void) {
 
     destroy();
 }
+
 
 int main(void)
 {

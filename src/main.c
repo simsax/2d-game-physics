@@ -80,7 +80,6 @@ static void create_walls(void) {
 }
 
 static void demo_incline_plane(void) {
-    PIXELS_PER_METER = 100;
     create_walls();
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
@@ -92,23 +91,25 @@ static void demo_incline_plane(void) {
 }
 
 static void demo_stack(void) {
-    PIXELS_PER_METER = 100;
     create_walls();
-    float x_center = WINDOW_WIDTH / 2.0;
-    float ground = WINDOW_HEIGHT - 75.0f;
-    float side_len = 80.0f;
+    float x_center = pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f);
+    float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
+    float side_len = 0.5f;
+    float y_center = ground - side_len / 2.0f;
+    draw_fill_circle_meters(x_center, ground, 4, 0xFF0000FF);
+    draw_circle_pixels((WINDOW_WIDTH - gui_width) / 2.0f, WINDOW_HEIGHT - 75.0f, 4, 0x00FF00FF);
     for (int i = 0; i < 10; i++) {
         Body* box = world_new_body(&world);
-        body_init_box_pixels(box, side_len, side_len, x_center, ground - side_len / 2.0f - i * side_len, 1.0);
+        body_init_box(box, side_len, side_len, x_center, y_center - i * side_len, 1.0);
         box->restitution = 0.0;
         box->friction = 0.2;
     }
 }
 
 static void demo_pyramid(void) {
-    PIXELS_PER_METER = 20;
+    PIXELS_PER_METER = 10;
     create_walls();
-    int len_base = 30;
+    int len_base = 60;
     float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter
@@ -116,8 +117,8 @@ static void demo_pyramid(void) {
     /*float y_offset = side_len * 0.25f;*/
     /*float x_offset = side_len * 1.125f;*/
     float y_offset = side_len;
-    float x_offset = side_len * 1.124f;
-    float y_start = ground - side_len / 2.0f; // - y_offset;
+    float x_offset = side_len * 1.126f;
+    float y_start = ground - side_len / 2.0f;// - y_offset;
     for (int i = 0; i < len_base; i++) {
         float y = y_start - i * y_offset;
         float x_row = x_start + i * x_offset / 2.0f;
@@ -159,6 +160,7 @@ static void (*demos[9])(void) = {
 
 
 static void start_simulation(void (*demo)(void)) {
+    PIXELS_PER_METER = 100.0f; // default value
     world_init(&world, 9.8f);
     world.warm_start = warm_start;
     demo();

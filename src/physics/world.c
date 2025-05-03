@@ -29,9 +29,9 @@ void world_free(World* world) {
     /*DA_FREE(&world->joint_constraints);*/
 
     DA_FREE(&world->bodies);
-    ht_free(&world->manifold_map);
     DA_FREE(&world->forces);
     DA_FREE(&world->torques);
+    ht_free(&world->manifold_map);
 }
 
 Body* world_new_body(World* world) {
@@ -77,8 +77,6 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    double avg_delta = 0;
-    int count_finds = 0;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -89,11 +87,7 @@ void world_update(World* world, float dt) {
                 // find if there is already an existing manifold between A and B
                 bool persistent[2] = { false };
                 bool found = false;
-                double ts_start = GetTime();
                 Manifold* manifold = ht_get_or_new(&world->manifold_map, (Pair){i, j}, num_contacts, &found);
-                double ts_end = GetTime();
-                avg_delta += ts_end - ts_start;
-                count_finds++;
                 manifold->expired = false;
                 if (found) {
                     // manifold exists, check persistent contacts
@@ -112,9 +106,6 @@ void world_update(World* world, float dt) {
             } 
         }
     }
-    avg_delta /= count_finds;
-    printf("Avg manifold find time: %fms, num finds: %d\n", avg_delta * 1000, count_finds);
-
 
     /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
     /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/

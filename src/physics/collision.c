@@ -3,6 +3,25 @@
 #include "vec2.h"
 #include <float.h>
 #include <string.h>
+#include <math.h>
+#include "../graphics.h"
+
+static bool collision_iscolliding_broad(Body* a, Body* b) {
+    // only works for boxes now
+    BoxShape* a_shape = &a->shape.as.box;
+    BoxShape* b_shape = &b->shape.as.box;
+    
+    float a_radius = sqrtf(a_shape->width * a_shape->width + a_shape->height * a_shape->height) / 2.0f;
+    float b_radius = sqrtf(b_shape->width * b_shape->width + b_shape->height * b_shape->height) / 2.0f;
+
+    draw_circle_meters(a->position.x, a->position.y, a_radius, 0xFF0000);
+    draw_circle_meters(b->position.x, b->position.y, b_radius, 0xFF0000);
+
+    float radius_sum = a_radius + b_radius;
+    Vec2 distance = vec2_sub(b->position, a->position);
+    bool is_colliding = vec2_magnitude_squared(distance) <= radius_sum * radius_sum;
+    return is_colliding;
+}
 
 bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_contacts) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
@@ -14,6 +33,10 @@ bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_co
         return collision_iscolliding_circlecircle(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_polygon) {
+        // if a and b are boxes, do a broad check first
+        // TODO: figure out how to do this for generic polygon
+        if (a->shape.type == BOX_SHAPE && b->shape.type == BOX_SHAPE && !collision_iscolliding_broad(a, b))
+            return false;
         return collision_iscolliding_polygonpolygon(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_circle) {

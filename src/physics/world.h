@@ -10,7 +10,7 @@
 
 typedef struct World {
     BodyArray bodies;
-    /*JointConstraintArray joint_constraints;*/
+    // JointConstraintArray joint_constraints;
     Table manifold_map;
     Vec2Array forces;
     FloatArray torques;

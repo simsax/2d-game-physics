@@ -2,17 +2,16 @@
 #define CONSTRAINT_H
 
 #include "body.h"
-/*#include "matMN.h"*/
-/**/
-/*typedef struct {*/
-/*    int a_index; // index of body A in the world's bodies array*/
-/*    int b_index; // index of body B in the world's bodies array*/
-/*    Vec2 a_point; // anchor point in A's local space*/
-/*    Vec2 b_point; // anchor point in B's local space*/
-/*    MatMN jacobian;*/
-/*    VecN cached_lambda;*/
-/*    float bias;*/
-/*} JointConstraint;*/
+
+// typedef struct {
+//     int a_index; // index of body A in the world's bodies array*/
+//     int b_index; // index of body B in the world's bodies array*/
+//     Vec2 a_point; // anchor point in A's local space*/
+//     Vec2 b_point; // anchor point in B's local space*/
+//     MatMN jacobian;
+//     VecN cached_lambda;
+//     float bias;
+// } JointConstraint;
 
 typedef struct {
     Vec2 a_collision_point; // collision point of A in world's space

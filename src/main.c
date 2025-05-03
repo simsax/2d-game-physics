@@ -27,7 +27,6 @@
 // globals
 static bool running;
 static bool paused = false;
-static bool debug = true;
 static bool warm_start = true;
 static World world;
 static Vec2 mouse_coord = {0, 0};
@@ -109,7 +108,7 @@ static void demo_stack(void) {
 static void demo_pyramid(void) {
     PIXELS_PER_METER = 20;
     create_walls();
-    int len_base = 40;
+    int len_base = 30;
     float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter
@@ -184,9 +183,6 @@ static void input(void) {
         running = false;
     }
 
-    if (IsKeyPressed(KEY_D)) {
-        debug = !debug;
-    }
     if (IsKeyPressed(KEY_P)) {
         paused = !paused;
     }
@@ -291,43 +287,26 @@ static void render(float alpha) {
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
             /*printf("render_pos: (%.2f, %.2f)\n", (double)render_position.x, (double)render_position.y);*/
             if (body->shape.type == CIRCLE_SHAPE) {
-                /*if (!debug && body->texture.id) {*/
-                /*    float diameter = body->shape.as.circle.radius * 2;*/
-                /*    draw_texture(body->position.x, body->position.y, diameter, diameter,*/
-                /*            body->rotation, &body->texture);*/
-                /*} else {*/
                 draw_circle_line_meters(render_position.x, render_position.y,
                         body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
-                /*}*/
             }  
             if (body->shape.type == BOX_SHAPE) {
                 BoxShape* box_shape = &body->shape.as.box;
-                /*if (!debug && body->texture.id) {*/
-                /*    draw_texture(render_position.x, render_position.y, box_shape->width,*/
-                /*            box_shape->height, body->rotation, &body->texture);*/
-                /*} else {*/
                 draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, body_alpha, COLOR_BOX);
-                /*}*/
             }
             if (body->shape.type == POLYGON_SHAPE) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
-                if (!debug) {
-                    draw_fill_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
-                } else {
-                    draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
-                }
+                draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
             }
         }
 
         // joints
-        /*if (debug) {*/
-        /*    for (uint32_t i = 0; i < world.joint_constraints.count; i++) {*/
-        /*        JointConstraint* constraint = &world.joint_constraints.items[i];*/
-        /*        Body* a = &world.bodies.items[constraint->a_index];*/
-        /*        Vec2 anchor = body_local_to_world_space(a, constraint->a_point);*/
-        /*        draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);*/
-        /*    }*/
-        /*}*/
+        // for (uint32_t i = 0; i < world.joint_constraints.count; i++) {
+        //     JointConstraint* constraint = &world.joint_constraints.items[i];
+        //     Body* a = &world.bodies.items[constraint->a_index];
+        //     Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
+        //     draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);
+        // }
 
         render_gui();
     }
@@ -462,6 +441,3 @@ int main(void)
     return 0;
 }
 
-// TODO: try very big pyramid, compare in release the array vs table
-// common sense should be that table should be faster in that case, otherwise I have a different problem...
-// but if the table is not the bottleneck, maybe that's not gonna be detected... Idk

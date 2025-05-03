@@ -106,9 +106,9 @@ static void demo_stack(void) {
 }
 
 static void demo_pyramid(void) {
-    PIXELS_PER_METER = 10;
+    PIXELS_PER_METER = 20;
     create_walls();
-    int len_base = 60;
+    int len_base = 40;
     float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter

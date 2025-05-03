@@ -100,7 +100,8 @@ void world_update(World* world, float dt) {
     }
 
     // check collisions
-    /*double ts_start = GetTime();*/
+    double avg_delta = 0;
+    int count_finds = 0;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -109,7 +110,11 @@ void world_update(World* world, float dt) {
             uint32_t num_contacts = 0;
             if (collision_iscolliding(a, b, i, j, contacts, &num_contacts)) {
                 // find if there is already an existing manifold between A and B
+                double ts_start = GetTime();
                 Manifold* manifold = world_manifold_find(world, i, j);
+                double ts_end = GetTime();
+                avg_delta += ts_end - ts_start;
+                count_finds++;
                 if (manifold == NULL) {
                     // create new manifold
                     manifold = world_manifold_next(world);
@@ -123,12 +128,6 @@ void world_update(World* world, float dt) {
                     }
                 }
                 for (uint32_t c = 0; c < num_contacts; c++) {
-                    // draw collision points and normal
-                    /*draw_fill_circle_meters(contacts[c].start.x, contacts[c].start.y, 4, 0xFF0000FF);*/
-                    /*draw_fill_circle_meters(contacts[c].end.x, contacts[c].end.y, 2, 0xFF0000FF);*/
-                    /*Vec2 end_normal = vec2_add(contacts[c].start, vec2_mult(contacts[c].normal, 16));*/
-                    /*draw_line_pixels(contacts[c].start.x, contacts[c].start.y, end_normal.x, end_normal.y, 0x00FF00FF);*/
-
                     // contact->end is pa, contact->start is pb, normal is from A to B
                     constraint_penetration_init(
                         &manifold->constraints[c], contacts[c].a_index, contacts[c].b_index,
@@ -138,9 +137,8 @@ void world_update(World* world, float dt) {
             }
         }
     }
-    /*double ts_end = GetTime();*/
-
-    /*printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);*/
+    avg_delta /= count_finds;
+    printf("Avg manifold find time: %fms, num finds: %d\n", (avg_delta) * 1000, count_finds);
 
     // delete expired manifold
     for (uint32_t i = 0; i < world->manifolds.count; i++) {

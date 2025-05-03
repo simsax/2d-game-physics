@@ -76,10 +76,9 @@ void world_update(World* world, float dt) {
         body_integrate_forces(body, dt);
     }
 
-    // TODO >>>>>>>>>>>>>>>>>>>>> benchmark ht_get_or_new vs find with a lot of bodies
-
     // check collisions
-    /*double ts_start = GetTime();*/
+    double avg_delta = 0;
+    int count_finds = 0;
     for (uint32_t i = 0; i < world->bodies.count - 1; i++) {
         for (uint32_t j = i + 1; j < world->bodies.count; j++) {
             Body* a = &world->bodies.items[i];
@@ -90,7 +89,11 @@ void world_update(World* world, float dt) {
                 // find if there is already an existing manifold between A and B
                 bool persistent[2] = { false };
                 bool found = false;
+                double ts_start = GetTime();
                 Manifold* manifold = ht_get_or_new(&world->manifold_map, (Pair){i, j}, num_contacts, &found);
+                double ts_end = GetTime();
+                avg_delta += ts_end - ts_start;
+                count_finds++;
                 manifold->expired = false;
                 if (found) {
                     // manifold exists, check persistent contacts
@@ -109,11 +112,10 @@ void world_update(World* world, float dt) {
             } 
         }
     }
-    /*double ts_end = GetTime();*/
+    avg_delta /= count_finds;
+    printf("Avg manifold find time: %fms, num finds: %d\n", avg_delta * 1000, count_finds);
 
-    /*printf("Collision check time: %fms\n", (ts_end - ts_start) * 1000);*/
 
-    // solve all constraints
     /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
     /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/
     /*    Body* a = &world->bodies.items[constraint->a_index];*/
@@ -121,8 +123,6 @@ void world_update(World* world, float dt) {
     /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
     /*}*/
 
-
-    /*ts_start = GetTime();*/
     for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
         Bucket* bucket = &world->manifold_map.buckets[c];
         if (bucket->occupied) {
@@ -132,7 +132,7 @@ void world_update(World* world, float dt) {
             } else {
                 ht_remove_bucket(bucket);
             }
-        }
+        } 
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
         // joint

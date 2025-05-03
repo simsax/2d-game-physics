@@ -107,15 +107,13 @@ static void demo_stack(void) {
 }
 
 static void demo_pyramid(void) {
-    PIXELS_PER_METER = 10;
+    PIXELS_PER_METER = 20;
     create_walls();
-    int len_base = 60;
+    int len_base = 40;
     float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter
     float x_start = x_center - (len_base / 2.0f) * side_len;
-    /*float y_offset = side_len * 0.25f;*/
-    /*float x_offset = side_len * 1.125f;*/
     float y_offset = side_len;
     float x_offset = side_len * 1.126f;
     float y_start = ground - side_len / 2.0f;// - y_offset;

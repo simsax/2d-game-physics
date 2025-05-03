@@ -38,8 +38,8 @@ all: debug
 debug: CFLAGS += -O0 -g3 # -fsanitize=address,undefined -fsanitize-trap
 # debug: LDFLAGS += -fsanitize=address
 debug: $(BUILD_DIR)/$(TARGET_EXE)
-release: CFLAGS += -O3 -DNDEBUG
-release: $(BUILD_DIR)/$(TARGET_EXE)
+rel: CFLAGS += -O3 -DNDEBUG
+rel: $(BUILD_DIR)/$(TARGET_EXE)
 
 run:
 	$(BUILD_DIR)/$(TARGET_EXE)

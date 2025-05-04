@@ -33,10 +33,6 @@ bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_co
         return collision_iscolliding_circlecircle(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_polygon) {
-        // if a and b are boxes, do a broad check first
-        // TODO: figure out how to do this for generic polygon
-        if (a->shape.type == BOX_SHAPE && b->shape.type == BOX_SHAPE && !collision_iscolliding_broad(a, b))
-            return false;
         return collision_iscolliding_polygonpolygon(a, b, contacts, num_contacts);
     }
     if (a_is_polygon && b_is_circle) {

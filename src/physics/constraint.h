@@ -3,15 +3,15 @@
 
 #include "body.h"
 
-// typedef struct {
-//     int a_index; // index of body A in the world's bodies array*/
-//     int b_index; // index of body B in the world's bodies array*/
-//     Vec2 a_point; // anchor point in A's local space*/
-//     Vec2 b_point; // anchor point in B's local space*/
-//     MatMN jacobian;
-//     VecN cached_lambda;
-//     float bias;
-// } JointConstraint;
+typedef struct {
+    int a_index; // index of body A in the world's bodies array
+    int b_index; // index of body B in the world's bodies array
+    Vec2 a_point; // anchor point in A's local space
+    Vec2 b_point; // anchor point in B's local space
+    float k; // J*M_inv*Jt
+    float lambda;
+    float bias;
+} JointConstraint;
 
 typedef struct {
     Vec2 a_collision_point; // collision point of A in world's space
@@ -25,11 +25,11 @@ typedef struct {
     float friction; // friction coefficient between the two penetrating bodies
 } PenetrationConstraint;
 
-/*typedef struct {*/
-/*    uint32_t capacity;*/
-/*    uint32_t count;*/
-/*    JointConstraint* items;*/
-/*} JointConstraintArray;*/
+typedef struct {
+    uint32_t capacity;
+    uint32_t count;
+    JointConstraint* items;
+} JointConstraintArray;
 
 typedef struct {
     uint32_t capacity;
@@ -37,10 +37,9 @@ typedef struct {
     PenetrationConstraint* items;
 } PenetrationConstraintArray;
 
-/*JointConstraint constraint_joint_create(Body* a, Body* b, int a_index, int b_index, Vec2 anchor_point);*/
-/*void constraint_joint_free(JointConstraint* constraint);*/
-/*void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b);*/
-/*void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt);*/
+void constraint_joint_init(JointConstraint* constraint, Body* a, Body* b, int a_index, int b_index, Vec2 anchor_point);
+void constraint_joint_solve(JointConstraint* constraint, Body* a, Body* b);
+void constraint_joint_pre_solve(JointConstraint* constraint, Body* a, Body* b, float dt);
 
 void constraint_penetration_init(PenetrationConstraint* constraint, Vec2 a_collision_point, Vec2 b_collision_point, Vec2 normal, bool persistent);
 void constraint_penetration_pre_solve(PenetrationConstraint* constraint, Body* a, Body* b, float dt);

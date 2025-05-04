@@ -23,24 +23,20 @@ void world_free(World* world) {
         }
     }
 
-    /*for (uint32_t i = 0; i < world->joint_constraints.count; i++) {*/
-    /*    constraint_joint_free(&world->joint_constraints.items[i]);*/
-    /*}*/
-    /*DA_FREE(&world->joint_constraints);*/
-
+    ht_free(&world->manifold_map);
+    DA_FREE(&world->joint_constraints);
     DA_FREE(&world->bodies);
     DA_FREE(&world->forces);
     DA_FREE(&world->torques);
-    ht_free(&world->manifold_map);
 }
 
 Body* world_new_body(World* world) {
     return DA_NEXT_PTR(&world->bodies);
 }
 
-/*JointConstraint* world_new_joint_constraint(World* world) {*/
-/*    return DA_NEXT_PTR(&world->joint_constraints);*/
-/*}*/
+JointConstraint* world_new_joint(World* world) {
+    return DA_NEXT_PTR(&world->joint_constraints);
+}
 
 void world_add_force(World* world, Vec2 force) {
     DA_APPEND(&world->forces, force);
@@ -107,12 +103,12 @@ void world_update(World* world, float dt) {
         }
     }
 
-    /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
-    /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/
-    /*    Body* a = &world->bodies.items[constraint->a_index];*/
-    /*    Body* b = &world->bodies.items[constraint->b_index];*/
-    /*    constraint_joint_pre_solve(constraint, a, b, dt);*/
-    /*}*/
+    for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
+        JointConstraint* constraint = &world->joint_constraints.items[c];
+        Body* a = &world->bodies.items[constraint->a_index];
+        Body* b = &world->bodies.items[constraint->b_index];
+        constraint_joint_pre_solve(constraint, a, b, dt);
+    }
 
     for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
         Bucket* bucket = &world->manifold_map.buckets[c];
@@ -126,13 +122,14 @@ void world_update(World* world, float dt) {
         } 
     }
     for (uint32_t i = 0; i < SOLVE_ITERATIONS; i++) {
-        // joint
-        /*for (uint32_t c = 0; c < world->joint_constraints.count; c++) {*/
-        /*    JointConstraint* constraint = &world->joint_constraints.items[c];*/
-        /*    Body* a = &world->bodies.items[constraint->a_index];*/
-        /*    Body* b = &world->bodies.items[constraint->b_index];*/
-        /*    constraint_joint_solve(constraint, a, b);*/
-        /*}*/
+        // joints
+        for (uint32_t c = 0; c < world->joint_constraints.count; c++) {
+            JointConstraint* constraint = &world->joint_constraints.items[c];
+            Body* a = &world->bodies.items[constraint->a_index];
+            Body* b = &world->bodies.items[constraint->b_index];
+            constraint_joint_solve(constraint, a, b);
+        }
+        // penetrations
         for (uint32_t c = 0; c < world->manifold_map.capacity; c++) {
             if (world->manifold_map.buckets[c].occupied) {
                 manifold_solve(&world->manifold_map.buckets[c].value, world->bodies);

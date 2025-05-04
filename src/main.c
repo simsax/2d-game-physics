@@ -8,6 +8,7 @@
 #include "physics/utils.h"
 #include "physics/vec2.h"
 #include "physics/world.h"
+#include "physics/constraint.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
@@ -107,9 +108,22 @@ static void demo_stack(void) {
 
 static void demo_pyramid(void) {
     PIXELS_PER_METER = 20;
+
+    // breaking ball
+    Body* handle = world_new_body(&world);
+    body_init_circle(handle, 1, pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f + 40), pixels_to_meters(75), 0);
+
+    Body* ball = world_new_body(&world);
+    body_init_circle(ball, 5, pixels_to_meters((WINDOW_WIDTH - gui_width) / 6.0f), pixels_to_meters(WINDOW_HEIGHT / 4.0f), 1000);
+    ball->restitution = 0.1;
+
+    JointConstraint* joint = world_new_joint(&world);
+    constraint_joint_init(joint, handle, ball, 0, 1, handle->position);
+    /*constraint_joint_init(joint, handle, ball, 0, 1, (Vec2){pixels_to_meters(300), pixels_to_meters(300)});*/
+
     create_walls();
     int len_base = 30;
-    float x_center = pixels_to_meters(WINDOW_WIDTH / 2.0 - gui_width / 2.0);
+    float x_center = pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter
     float x_start = x_center - (len_base / 2.0f) * side_len;
@@ -127,6 +141,7 @@ static void demo_pyramid(void) {
             box->friction = 0.4;
         }
     }
+
 }
 
 
@@ -144,17 +159,14 @@ static void (*demos[9])(void) = {
     
 
 // values to check:
-// - fraction of lambda impulse to re-use (probably just use all)
 // - bias
 // - penetration slop
 // - restitution? For now set it 0
 
 // TODO: broad phase
 // TODO: collision islands
-// TODO: breaking ball (constrained at the top) that destroys a pyramid could be a nice demo
 // TODO: zoom in and out with mouse wheel, ability to navigate the world this should be outside the scope of the physics engine though
 // TODO: simualtion with rotating motor
-
 
 static void start_simulation(void (*demo)(void)) {
     PIXELS_PER_METER = 100.0f; // default value
@@ -285,7 +297,6 @@ static void render(float alpha) {
                 body_alpha = 1;
             }
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
-            /*printf("render_pos: (%.2f, %.2f)\n", (double)render_position.x, (double)render_position.y);*/
             if (body->shape.type == CIRCLE_SHAPE) {
                 draw_circle_line_meters(render_position.x, render_position.y,
                         body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
@@ -301,12 +312,17 @@ static void render(float alpha) {
         }
 
         // joints
-        // for (uint32_t i = 0; i < world.joint_constraints.count; i++) {
-        //     JointConstraint* constraint = &world.joint_constraints.items[i];
-        //     Body* a = &world.bodies.items[constraint->a_index];
-        //     Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
-        //     draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);
-        // }
+        for (uint32_t i = 0; i < world.joint_constraints.count; i++) {
+            JointConstraint* constraint = &world.joint_constraints.items[i];
+            Body* a = &world.bodies.items[constraint->a_index];
+            Body* b = &world.bodies.items[constraint->b_index];
+
+            Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
+
+            draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);
+            draw_line_meters(anchor.x, anchor.y, a->position.x, a->position.y, 0x88888888);
+            draw_line_meters(anchor.x, anchor.y, b->position.x, b->position.y, 0x88888888);
+        }
 
         render_gui();
     }

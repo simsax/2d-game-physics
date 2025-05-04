@@ -21,6 +21,7 @@ void body_init_circle(Body* body, float radius, float x, float y, float mass) {
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_polygon(Body* body, Vec2Array vertices, float x, float y, float mass) {
@@ -43,6 +44,7 @@ void body_init_polygon(Body* body, Vec2Array vertices, float x, float y, float m
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_box(Body* body, float width, float height, float x, float y, float mass) {
@@ -65,6 +67,7 @@ void body_init_box(Body* body, float width, float height, float x, float y, floa
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass) {
@@ -83,6 +86,7 @@ void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass) {
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_circle_container_pixels(Body* body, int radius, int x, int y, float mass) {
@@ -101,6 +105,7 @@ void body_init_circle_container_pixels(Body* body, int radius, int x, int y, flo
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, float mass) {
@@ -127,6 +132,7 @@ void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, floa
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 void body_init_box_pixels(Body* body, float width, float height, int x, int y, float mass) {
@@ -149,6 +155,7 @@ void body_init_box_pixels(Body* body, float width, float height, int x, int y, f
     body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
     body->restitution = 1.0f;
     body->friction = 0.7f;
+    body->static_torque = 0.0f;
 }
 
 
@@ -160,6 +167,10 @@ void body_add_torque(Body* body, float torque) {
     body->sum_torque += torque;
 }
 
+void body_add_static_torque(Body* body, float torque) {
+    body->static_torque += torque;
+}
+
 void body_clear_forces(Body* body) {
     body->sum_forces = VEC2(0, 0);
 }
@@ -169,8 +180,15 @@ void body_clear_torque(Body* body) {
 }
 
 void body_integrate_forces(Body* body, float dt) {
-    if (body_is_static(body))
+    if (body_is_static(body)) {
+        // hack for demo 4
+        if (body->static_torque != 0) {
+            body->angular_acceleration = body->static_torque; // hack
+            body->angular_velocity += body->angular_acceleration * dt;
+            body->angular_velocity *= 0.998f;
+        }
         return;
+    }
 
     // linear
     body->acceleration = vec2_mult(body->sum_forces, body->inv_mass);

@@ -22,6 +22,7 @@ typedef struct Body {
     // forces and torque
     Vec2 sum_forces;
     float sum_torque;
+    float static_torque; // hack for demo 4
 
     // mass and moment of inertia
     float inv_mass;
@@ -49,6 +50,7 @@ void body_integrate_linear(Body* body, float dt);
 void body_integrate_angular(Body* body, float dt);
 void body_add_force(Body* body, Vec2 force);
 void body_add_torque(Body* body, float torque);
+void body_add_static_torque(Body* body, float torque);
 void body_clear_forces(Body* body);
 void body_clear_torque(Body* body);
 bool body_is_static(Body* body);

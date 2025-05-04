@@ -14,10 +14,10 @@
 
 #define SHOW_FPS 1
 
-// palette (https://lospec.com/palette-list/grayscale-16)
 #define COLOR_BACKGROUND 0x181818FF
-#define COLOR_CIRCLE 0x9B9B9BFF
-#define COLOR_BOX 0x9B9B9BFF
+#define COLOR_CIRCLE 0x0897A1FF
+#define COLOR_BOX 0xB95959FF
+#define COLOR_STATIC 0xAAAAAAFF
 
 #define COLOR_GUI 0x000000FF
 #define COLOR_GUI_BUTTON 0x8C8C8CFF
@@ -37,7 +37,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-static int current_demo = 3;
+static int current_demo = 0;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -118,24 +118,23 @@ static void demo_pyramid(void) {
 
     // breaking ball
     Body* handle = world_new_body(&world);
-    body_init_circle(handle, 0, pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f + 40), pixels_to_meters(75), 0);
+    body_init_circle(handle, 0, pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f), pixels_to_meters(75), 0);
 
     Body* ball = world_new_body(&world);
-    body_init_circle(ball, 5, pixels_to_meters((WINDOW_WIDTH - gui_width) / 6.0f), pixels_to_meters(WINDOW_HEIGHT / 4.0f), 1000);
+    body_init_circle(ball, 5, pixels_to_meters((WINDOW_WIDTH - gui_width) / 8.0f), pixels_to_meters(WINDOW_HEIGHT / 5.0f), 1000);
     ball->restitution = 0.1;
 
     JointConstraint* joint = world_new_joint(&world);
     constraint_joint_init(joint, handle, ball, 0, 1, handle->position);
-    /*constraint_joint_init(joint, handle, ball, 0, 1, (Vec2){pixels_to_meters(300), pixels_to_meters(300)});*/
 
     create_walls();
-    int len_base = 30;
+    int len_base = 36;
     float x_center = pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
     float side_len = 1.0f; // 1 meter
-    float x_start = x_center - (len_base / 2.0f) * side_len;
-    float y_offset = side_len;
     float x_offset = side_len * 1.126f;
+    float x_start = x_center - (len_base / 2.0f) * x_offset;
+    float y_offset = side_len;
     float y_start = ground - side_len / 2.0f;// - y_offset;
     for (int i = 0; i < len_base; i++) {
         float y = y_start - i * y_offset;
@@ -151,24 +150,54 @@ static void demo_pyramid(void) {
 
 }
 
-static void demo_rotating_motor(void) {
-    PIXELS_PER_METER = 30.0f; 
+static void demo_rotation(void) {
+    PIXELS_PER_METER = 20.0f; 
     world_init(&world, 9.8f);
     world.warm_start = true;
 
     // outer circle
-    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
-    float y_center = WINDOW_HEIGHT / 2.0;
+    float x_center = (WINDOW_WIDTH - gui_width) / 2.0f;
+    float y_center = WINDOW_HEIGHT / 2.0f;
     float radius = y_center - 50;
     Body* circle = world_new_body(&world);
     body_init_circle_container_pixels(circle, radius, x_center, y_center, 0);
+    
+    // bodies
+    x_center = pixels_to_meters(x_center);
+    y_center = pixels_to_meters(y_center);
+    int len_base = 24;
+    float side_len = 0.8f; // 1 meter
+    float x_offset = side_len * 1.25f;
+    float y_offset = side_len * 1.25f;
+    float x_start = x_center - (len_base / 2.0f) * x_offset;
+    float y_start = y_center - (len_base / 2.0f) * y_offset;
+    for (int i = 0; i < len_base; i++) {
+        float y = y_start + i * y_offset;
+        for (int j = 0; j < len_base; j++) {
+            float x = x_start + j * x_offset;
+            Body* body = world_new_body(&world);
+            if ((i + j) & 1) {
+                body_init_circle(body, side_len / 2.0f, x, y, 1.0);
+            } else {
+                body_init_box(body, side_len, side_len, x, y, 1.0);
+            }
+            body->restitution = 0.0;
+            body->friction = 0.2;
+        }
+    }
+
+    // rotating motor
+    Body* motor = world_new_body(&world);
+    body_init_box(motor, 28, 1, x_center, y_center + 10, 0);
+    body_add_static_torque(motor, 1.0f);
+    /*motor->angular_velocity = 4.0f;*/
 }
 
 static void (*demos[9])(void) = {
     demo_incline_plane,
     demo_stack,
     demo_pyramid,
-    demo_rotating_motor,
+    demo_rotation,
     NULL,
     NULL,
     NULL,
@@ -185,7 +214,6 @@ static void (*demos[9])(void) = {
 // TODO: broad phase
 // TODO: collision islands
 // TODO: continuous collision detection
-// TODO: simualtion with rotating motor
 
 static void setup(void) {
     open_window();
@@ -219,8 +247,6 @@ static void input(void) {
         warm_start = !warm_start;
         world.warm_start = warm_start;
     }
-
-    /*world.bodies.items[5].position = mouse_coord;*/
 
     if (!paused) {
         // mouse
@@ -312,21 +338,24 @@ static void render(float alpha) {
             }
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
             if (body->shape.type == SHAPE_CIRCLE) {
+                uint32_t color = body_is_static(body) ? COLOR_STATIC : COLOR_CIRCLE;
                 draw_circle_line_meters(render_position.x, render_position.y,
-                        body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
+                        body->shape.as.circle.radius, body->rotation, color);
             }  
             if (body->shape.type == SHAPE_CIRCLE_CONTAINER) {
-                // replace with my own smooth circle function
+                uint32_t color = body_is_static(body) ? COLOR_STATIC : COLOR_CIRCLE;
                 draw_circle_meters(render_position.x, render_position.y,
-                        body->shape.as.circle.radius, COLOR_CIRCLE);
+                        body->shape.as.circle.radius, color);
             }  
             if (body->shape.type == SHAPE_BOX) {
+                uint32_t color = body_is_static(body) ? COLOR_STATIC : COLOR_BOX;
                 BoxShape* box_shape = &body->shape.as.box;
-                draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, body_alpha, COLOR_BOX);
+                draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, body_alpha, color);
             }
             if (body->shape.type == SHAPE_POLYGON) {
+                uint32_t color = body_is_static(body) ? COLOR_STATIC : COLOR_BOX;
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
-                draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
+                draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, color);
             }
         }
 
@@ -338,7 +367,7 @@ static void render(float alpha) {
 
             Vec2 anchor = body_local_to_world_space(a, constraint->a_point);
 
-            draw_fill_circle_meters(anchor.x, anchor.y, 3, 0xFF0000FF);
+            draw_fill_circle_meters(anchor.x, anchor.y, 3, 0x000000FF);
             draw_line_meters(anchor.x, anchor.y, a->position.x, a->position.y, 0x88888888);
             draw_line_meters(anchor.x, anchor.y, b->position.x, b->position.y, 0x88888888);
         }

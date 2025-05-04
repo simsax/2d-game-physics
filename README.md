@@ -20,4 +20,4 @@ I have too many ideas about other projects that I want to try right now, and too
 * [Raylib](https://www.raylib.com/)
 * http://allenchou.net/2013/12/game-physics-constraints-sequential-impulse/ 
 * https://www.chrishecker.com/Rigid_Body_Dynamics
-
+* https://www.youtube.com/watch?v=IjObMkufU9I (In Demo 4 I tried to replicate this)

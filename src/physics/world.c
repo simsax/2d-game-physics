@@ -136,8 +136,6 @@ void world_update(World* world, float dt) {
             }
         }
     }
-    /*ts_end = GetTime();*/
-    /*printf("Solve time: %fms\n", (ts_end - ts_start) * 1000);*/
 
     // integrate all velocities
     for (uint32_t i = 0; i < world->bodies.count; i++) {

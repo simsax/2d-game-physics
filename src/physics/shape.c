@@ -3,7 +3,6 @@
 #include <float.h>
 #include <stdbool.h>
 
-
 void shape_init_circle(Shape* shape, float radius) {
     shape->type = CIRCLE_SHAPE;
     shape->as.circle = (CircleShape) { .radius = radius };

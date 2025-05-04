@@ -3,25 +3,6 @@
 #include "vec2.h"
 #include <float.h>
 #include <string.h>
-#include <math.h>
-#include "../graphics.h"
-
-static bool collision_iscolliding_broad(Body* a, Body* b) {
-    // only works for boxes now
-    BoxShape* a_shape = &a->shape.as.box;
-    BoxShape* b_shape = &b->shape.as.box;
-    
-    float a_radius = sqrtf(a_shape->width * a_shape->width + a_shape->height * a_shape->height) / 2.0f;
-    float b_radius = sqrtf(b_shape->width * b_shape->width + b_shape->height * b_shape->height) / 2.0f;
-
-    draw_circle_meters(a->position.x, a->position.y, a_radius, 0xFF0000);
-    draw_circle_meters(b->position.x, b->position.y, b_radius, 0xFF0000);
-
-    float radius_sum = a_radius + b_radius;
-    Vec2 distance = vec2_sub(b->position, a->position);
-    bool is_colliding = vec2_magnitude_squared(distance) <= radius_sum * radius_sum;
-    return is_colliding;
-}
 
 bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_contacts) {
     bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
@@ -113,7 +94,6 @@ bool collision_iscolliding_polygonpolygon(Body* a, Body* b, Contact* contacts, u
 
     Vec2 contact_points[2] = { v0, v1 };
     Vec2 clipped_points[2] = { v0, v1 };
-    // TODO: figure out for loop
     for (uint32_t i = 0; i < reference_shape->world_vertices.count; i++) {
         if (i == index_reference_edge)
             continue;

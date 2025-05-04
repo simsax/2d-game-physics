@@ -5,6 +5,7 @@
 
 typedef enum {
     CIRCLE_SHAPE,
+    CIRCLE_SHAPE_CONTAINER, // for demo 4
     POLYGON_SHAPE,
     BOX_SHAPE
 } ShapeType;

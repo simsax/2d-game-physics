@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 199309L // required for clock_gettime under c99
 #include <raylib.h>
 
 #include "graphics.h"
@@ -80,6 +79,9 @@ static void create_walls(void) {
 }
 
 static void demo_incline_plane(void) {
+    PIXELS_PER_METER = 100.0f;
+    world_init(&world, 9.8f);
+    world.warm_start = warm_start;
     create_walls();
     float x_center = WINDOW_WIDTH / 2.0;
     float y_center = WINDOW_HEIGHT / 2.0;
@@ -91,14 +93,17 @@ static void demo_incline_plane(void) {
 }
 
 static void demo_stack(void) {
+    PIXELS_PER_METER = 30.0f; 
+    world_init(&world, 9.8f);
+    world.warm_start = true;
     create_walls();
     float x_center = pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f);
     float ground = pixels_to_meters(WINDOW_HEIGHT - 75.0f);
-    float side_len = 0.5f;
+    float side_len = 1.0f;
     float y_center = ground - side_len / 2.0f;
     draw_fill_circle_meters(x_center, ground, 4, 0xFF0000FF);
     draw_circle_pixels((WINDOW_WIDTH - gui_width) / 2.0f, WINDOW_HEIGHT - 75.0f, 4, 0x00FF00FF);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 18; i++) {
         Body* box = world_new_body(&world);
         body_init_box(box, side_len, side_len, x_center, y_center - i * side_len, 1.0);
         box->restitution = 0.0;
@@ -108,10 +113,12 @@ static void demo_stack(void) {
 
 static void demo_pyramid(void) {
     PIXELS_PER_METER = 20;
+    world_init(&world, 20.0f);
+    world.warm_start = warm_start;
 
     // breaking ball
     Body* handle = world_new_body(&world);
-    body_init_circle(handle, 1, pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f + 40), pixels_to_meters(75), 0);
+    body_init_circle(handle, 0, pixels_to_meters((WINDOW_WIDTH - gui_width) / 2.0f + 40), pixels_to_meters(75), 0);
 
     Body* ball = world_new_body(&world);
     body_init_circle(ball, 5, pixels_to_meters((WINDOW_WIDTH - gui_width) / 6.0f), pixels_to_meters(WINDOW_HEIGHT / 4.0f), 1000);
@@ -144,12 +151,24 @@ static void demo_pyramid(void) {
 
 }
 
+static void demo_rotating_motor(void) {
+    PIXELS_PER_METER = 30.0f; 
+    world_init(&world, 9.8f);
+    world.warm_start = true;
+
+    // outer circle
+    float x_center = WINDOW_WIDTH / 2.0 - gui_width / 2.0;
+    float y_center = WINDOW_HEIGHT / 2.0;
+    float radius = y_center - 50;
+    Body* circle = world_new_body(&world);
+    body_init_circle_pixels(circle, radius, x_center, y_center, 0);
+}
 
 static void (*demos[9])(void) = {
     demo_incline_plane,
     demo_stack,
     demo_pyramid,
-    NULL,
+    demo_rotating_motor,
     NULL,
     NULL,
     NULL,
@@ -158,22 +177,15 @@ static void (*demos[9])(void) = {
 };
     
 
-// values to check:
+// values to fine-tune:
 // - bias
 // - penetration slop
-// - restitution? For now set it 0
+// - restitution
 
 // TODO: broad phase
 // TODO: collision islands
-// TODO: zoom in and out with mouse wheel, ability to navigate the world this should be outside the scope of the physics engine though
+// TODO: continuous collision detection
 // TODO: simualtion with rotating motor
-
-static void start_simulation(void (*demo)(void)) {
-    PIXELS_PER_METER = 100.0f; // default value
-    world_init(&world, 9.8f);
-    world.warm_start = warm_start;
-    demo();
-}
 
 static void setup(void) {
     open_window();
@@ -182,7 +194,7 @@ static void setup(void) {
     text_demos_size = MeasureTextEx(GetFontDefault(), "Demos", font_size, 1);
     text_num_size = MeasureTextEx(GetFontDefault(), "8", font_size, 1);
 
-    start_simulation(demos[current_demo]);
+    demos[current_demo]();
 }
 
 static void destroy(void) {
@@ -201,7 +213,7 @@ static void input(void) {
     if (IsKeyPressed(KEY_R)) {
         paused = false;
         world_free(&world);
-        start_simulation(demos[current_demo]);
+        demos[current_demo]();
     }
     if (IsKeyPressed(KEY_W)) {
         warm_start = !warm_start;
@@ -260,30 +272,32 @@ static void render_gui(void) {
     }
 
     for (int i = 0; i < num_demos; i++) {
-        int center_y = 100 * (i + 1) + 20;
-        int top_side = center_y - side_len / 2;
-        int left_side = center_x - side_len / 2;
+        if (demos[i] != NULL) {
+            int center_y = 100 * (i + 1) + 20;
+            int top_side = center_y - side_len / 2;
+            int left_side = center_x - side_len / 2;
 
-        bool is_hovering = (
-            mouse_coord.x >= left_side            &&
-            mouse_coord.x <= left_side + side_len &&
-            mouse_coord.y >= top_side             &&
-            mouse_coord.y <= top_side + side_len
-        );
+            bool is_hovering = (
+                mouse_coord.x >= left_side            &&
+                mouse_coord.x <= left_side + side_len &&
+                mouse_coord.y >= top_side             &&
+                mouse_coord.y <= top_side + side_len
+            );
 
-        Color color = GetColor(COLOR_GUI_BUTTON);
-        if (is_hovering) {
-            color = GetColor(COLOR_GUI_BUTTON_HOVER);
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && demos[i] != NULL) {
-                current_demo = i;
-                world_free(&world);
-                start_simulation(demos[current_demo]);
-            }
-        } 
+            Color color = GetColor(COLOR_GUI_BUTTON);
+            if (is_hovering) {
+                color = GetColor(COLOR_GUI_BUTTON_HOVER);
+                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && demos[i] != NULL) {
+                    current_demo = i;
+                    world_free(&world);
+                    demos[current_demo]();
+                }
+            } 
 
-        DrawRectangle(left_side, top_side, side_len, side_len, color);
-        int demo_num = i + 1;
-        DrawText(TextFormat("%d", demo_num), center_x - text_num_size.x / 2, center_y - text_num_size.y / 2, font_size, GetColor(COLOR_GUI));
+            DrawRectangle(left_side, top_side, side_len, side_len, color);
+            int demo_num = i + 1;
+            DrawText(TextFormat("%d", demo_num), center_x - text_num_size.x / 2, center_y - text_num_size.y / 2, font_size, GetColor(COLOR_GUI));
+        }
     }
 }
 
@@ -383,76 +397,8 @@ static void run(void) {
     destroy();
 }
 
-static void test_table(void) {
-    Table table;
-    ht_init(&table, 8, 70);
-
-    for (int i = 0; i < 5; i++) {
-        for (int j = 0; j < 5; j++) {
-            ht_set(&table, (Pair){i, j}, 2);
-        }
-    }
-
-    ht_print(&table);
-
-    ht_remove(&table, (Pair){1,3});
-    ht_remove(&table, (Pair){5,6});
-    ht_remove(&table, (Pair){0,1});
-
-    ht_print(&table);
-
-    ht_set(&table, (Pair){1,3}, 2);
-    ht_set(&table, (Pair){5,6}, 2);
-    ht_set(&table, (Pair){0,1}, 2);
-
-    ht_print(&table);
-}
-
-static double clock_timestamp(void) {
-    // returns timestamp in seconds since unix epoch
-    struct timespec t;
-    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1) {
-        printf("ERROR: clock_gettime failed\n");
-        exit(1);
-    }
-    return (double)t.tv_sec + (double)t.tv_nsec * 1e-9;
-}
-
-static void do_table_size(size_t table_size) {
-    Table table;
-    uint32_t load_factor = 70;
-    size_t to_add_max = table_size * load_factor / 100;
-    size_t to_add_sqrt = sqrt(to_add_max);
-
-    ht_init(&table, table_size, load_factor);
-
-    for (size_t i = 0; i < to_add_sqrt - 1; i++) {
-        for (size_t j = i; j < to_add_sqrt; j++) {
-            ht_set(&table, (Pair){i, j}, 2);
-        }
-    }
-
-#if DEBUG_TABLE
-    printf("Table size: %zu, count: %d, collisions: %zu, collisions / count: %.1f\n", table_size, table.count, table.num_collisions, (double)table.num_collisions / table.count);
-#endif
-    ht_free(&table);
-}
-
-static void test_table_performance(void) {
-    double start_ts = clock_timestamp();
-    uint32_t table_size = 512;
-    for (int i = 0; i < 17; i++) {
-        do_table_size(table_size);
-        table_size *= 2;
-    }
-    double end_ts = clock_timestamp();
-    printf("Total generation took: %.3fs\n", end_ts - start_ts);
-}
-
 int main(void)
 {
-    /*srand(time(NULL));*/
-    /*test_table_performance();*/
     run();
     return 0;
 }

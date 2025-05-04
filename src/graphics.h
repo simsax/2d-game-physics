@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 #include "raylib.h"
-
-// TODO: remove
 #include "physics/vec2.h"
 
 #define WINDOW_HEIGHT 1080

@@ -8,7 +8,7 @@
 
 typedef struct {
     PenetrationConstraint constraints[MAX_CONTACTS];
-    int a_index; // index of Body A in world's array (TODO: if we remove a body, this might not be true anymore)
+    int a_index; // index of Body A in world's array
     int b_index; // index of Body B in world's array
     uint8_t num_contacts; // 0, 1, 2
     bool expired;

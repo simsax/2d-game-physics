@@ -42,6 +42,7 @@ void body_init_circle(Body* body, float radius, float x, float y, float mass);
 void body_init_polygon(Body* body, Vec2Array vertices, float x, float y, float mass);
 void body_init_box(Body* body, float width, float height, float x, float y, float mass);
 void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass);
+void body_init_circle_container_pixels(Body* body, int radius, int x, int y, float mass);
 void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, float mass);
 void body_init_box_pixels(Body* body, float width, float height, int x, int y, float mass);
 void body_integrate_linear(Body* body, float dt);

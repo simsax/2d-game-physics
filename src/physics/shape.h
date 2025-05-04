@@ -4,10 +4,10 @@
 #include "vec2.h"
 
 typedef enum {
-    CIRCLE_SHAPE,
-    CIRCLE_SHAPE_CONTAINER, // for demo 4
-    POLYGON_SHAPE,
-    BOX_SHAPE
+    SHAPE_CIRCLE,
+    SHAPE_CIRCLE_CONTAINER, // for demo 4
+    SHAPE_POLYGON,
+    SHAPE_BOX
 } ShapeType;
 
 typedef struct {
@@ -36,6 +36,7 @@ typedef struct {
 } Shape;
 
 void shape_init_circle(Shape* shape, float radius);
+void shape_init_circle_container(Shape* shape, float radius);
 void shape_init_polygon(Shape* shape, Vec2Array local_vertices);
 void shape_init_box(Shape* shape, float width, float height);
 float shape_moment_of_inertia(Shape* shape);

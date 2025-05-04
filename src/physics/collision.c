@@ -4,14 +4,46 @@
 #include <float.h>
 #include <string.h>
 
+static void swap_contacts(Contact* contacts) {
+    Vec2 temp = contacts->start;
+    contacts->start = contacts->end;
+    contacts->end = temp;
+    contacts->normal = vec2_mult(contacts->normal, -1);
+}
+
 bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_contacts) {
-    bool a_is_circle = a->shape.type == CIRCLE_SHAPE;
-    bool b_is_circle = b->shape.type == CIRCLE_SHAPE;
-    bool a_is_polygon = a->shape.type == POLYGON_SHAPE || a->shape.type == BOX_SHAPE;
-    bool b_is_polygon = b->shape.type == POLYGON_SHAPE || b->shape.type == BOX_SHAPE;
+    bool a_is_circle = a->shape.type == SHAPE_CIRCLE;
+    bool b_is_circle = b->shape.type == SHAPE_CIRCLE;
+    bool a_is_circle_container = a->shape.type == SHAPE_CIRCLE_CONTAINER;
+    bool b_is_circle_container = b->shape.type == SHAPE_CIRCLE_CONTAINER;
+    bool a_is_polygon = a->shape.type == SHAPE_POLYGON || a->shape.type == SHAPE_BOX;
+    bool b_is_polygon = b->shape.type == SHAPE_POLYGON || b->shape.type == SHAPE_BOX;
 
     if (a_is_circle && b_is_circle) {
         return collision_iscolliding_circlecircle(a, b, contacts, num_contacts);
+    }
+    if (a_is_circle_container && b_is_circle_container) {
+        // TODO: I expect only one circle container, this is just a hack for demo 4
+    }
+    if (a_is_circle_container && b_is_circle) {
+        return collision_iscolliding_containercircle(a, b, contacts, num_contacts);
+    }
+    if (a_is_circle && b_is_circle_container) {
+        bool colliding = collision_iscolliding_containercircle(b, a, contacts, num_contacts);
+        if (colliding) {
+            swap_contacts(contacts);
+        }
+        return colliding;
+    }
+    if (a_is_circle_container && b_is_polygon) {
+        return collision_iscolliding_containerpolygon(a, b, contacts, num_contacts);
+    }
+    if (a_is_polygon && b_is_circle_container) {
+        bool colliding = collision_iscolliding_containerpolygon(b, a, contacts, num_contacts);
+        if (colliding) {
+            swap_contacts(contacts);
+        }
+        return colliding;
     }
     if (a_is_polygon && b_is_polygon) {
         return collision_iscolliding_polygonpolygon(a, b, contacts, num_contacts);
@@ -24,10 +56,7 @@ bool collision_iscolliding(Body* a, Body* b, Contact* contacts, uint32_t* num_co
 
         // in this case, we have to swap start, end and normal
         if (colliding) {
-            Vec2 temp = contacts->start;
-            contacts->start = contacts->end;
-            contacts->end = temp;
-            contacts->normal = vec2_mult(contacts->normal, -1);
+            swap_contacts(contacts);
         }
 
         return colliding;
@@ -53,6 +82,29 @@ bool collision_iscolliding_circlecircle(Body* a, Body* b, Contact* contacts, uin
     contact->normal = vec2_normalize(distance);
     contact->start = vec2_add(b->position, vec2_mult(contact->normal, -b_shape->radius));
     contact->end = vec2_add(a->position, vec2_mult(contact->normal, a_shape->radius));
+    contact->depth = vec2_magnitude(vec2_sub(contact->end, contact->start));
+
+    return true;
+}
+
+bool collision_iscolliding_containercircle(Body* container, Body* circle, Contact* contacts, uint32_t* num_contacts) {
+    *num_contacts = 1;
+    CircleShape* container_shape = &container->shape.as.circle;
+    CircleShape* circle_shape = &circle->shape.as.circle;
+
+    float radius_diff = container_shape->radius - circle_shape->radius;
+    Vec2 distance = vec2_sub(container->position, circle->position);
+    bool is_colliding = vec2_magnitude_squared(distance) > radius_diff * radius_diff;
+
+    if (!is_colliding)
+        return false;
+
+    Contact* contact = &contacts[0];
+
+    // compute contact collision information
+    contact->normal = vec2_normalize(distance);
+    contact->start = vec2_add(circle->position, vec2_mult(contact->normal, -circle_shape->radius));
+    contact->end = vec2_add(container->position, vec2_mult(contact->normal, -container_shape->radius));
     contact->depth = vec2_magnitude(vec2_sub(contact->end, contact->start));
 
     return true;
@@ -221,6 +273,35 @@ bool collision_iscolliding_polygoncircle(Body* polygon, Body* circle, Contact* c
         contact->depth = circle_radius - distance_circle_edge;
         contact->end = vec2_add(contact->start, vec2_mult(contact->normal, contact->depth));
     }
+
+    return true;
+}
+
+bool collision_iscolliding_containerpolygon(Body* container, Body* polygon, Contact* contacts, uint32_t* num_contacts) {
+    PolygonShape* polygon_shape = &polygon->shape.as.polygon;
+    CircleShape* container_shape = &container->shape.as.circle;
+    Vec2Array polygon_vertices = polygon_shape->world_vertices;
+    *num_contacts = 1;
+
+    Vec2 max_distance;
+    float max_distance_mag = -FLT_MAX;
+    for (uint32_t i = 0; i < polygon_vertices.count; i++) {
+        Vec2 poly_vertex = polygon_vertices.items[i];
+        Vec2 distance = vec2_sub(container->position, poly_vertex);
+        float center_vertex_distance = vec2_magnitude(distance);
+        if (center_vertex_distance > max_distance_mag) {
+            max_distance = distance;
+            max_distance_mag = center_vertex_distance;
+        }
+    }
+
+    if (max_distance_mag < container_shape->radius)
+        return false;
+
+    contacts->normal = vec2_normalize(max_distance);
+    contacts->start = vec2_add(container->position, vec2_mult(contacts->normal, -max_distance_mag));
+    contacts->end = vec2_add(container->position, vec2_mult(contacts->normal, -container_shape->radius));
+    contacts->depth = vec2_magnitude(vec2_sub(contacts->end, contacts->start));
 
     return true;
 }

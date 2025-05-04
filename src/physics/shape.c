@@ -4,7 +4,12 @@
 #include <stdbool.h>
 
 void shape_init_circle(Shape* shape, float radius) {
-    shape->type = CIRCLE_SHAPE;
+    shape->type = SHAPE_CIRCLE;
+    shape->as.circle = (CircleShape) { .radius = radius };
+}
+
+void shape_init_circle_container(Shape* shape, float radius) {
+    shape->type = SHAPE_CIRCLE_CONTAINER;
     shape->as.circle = (CircleShape) { .radius = radius };
 }
 
@@ -17,7 +22,7 @@ void shape_init_polygon(Shape* shape, Vec2Array local_vertices) {
         DA_APPEND(&prev_world_vertices, local_vertices.items[i]);
     }
 
-    shape->type = POLYGON_SHAPE;
+    shape->type = SHAPE_POLYGON;
     shape->as.polygon = (PolygonShape) {
         .local_vertices = local_vertices,
         .world_vertices = world_vertices,
@@ -49,7 +54,7 @@ void shape_init_box(Shape* shape, float width, float height) {
     DA_APPEND(&prev_world_vertices, VEC2(half_width, half_height));
     DA_APPEND(&prev_world_vertices, VEC2(-half_width, half_height));
 
-    shape->type = BOX_SHAPE;
+    shape->type = SHAPE_BOX;
     shape->as.box = (BoxShape) {
         .polygon = (PolygonShape) { 
             .local_vertices = local_vertices,
@@ -64,15 +69,16 @@ void shape_init_box(Shape* shape, float width, float height) {
 float shape_moment_of_inertia(Shape* shape) {
     // these still need to be multiplied by the mass (done in body.c)
     switch (shape->type) {
-        case CIRCLE_SHAPE: {
+        case SHAPE_CIRCLE:
+        case SHAPE_CIRCLE_CONTAINER: {
             float r = shape->as.circle.radius;
             return 0.5f * r * r;
         } break;
-        case POLYGON_SHAPE: {
+        case SHAPE_POLYGON: {
             // TODO
             return 5000;
         } break;
-        case BOX_SHAPE: {
+        case SHAPE_BOX: {
             float w = shape->as.box.width;
             float h = shape->as.box.height;
             // 1/12 * (w^2 + h^2)
@@ -84,7 +90,7 @@ float shape_moment_of_inertia(Shape* shape) {
 }
 
 void shape_update_vertices(Shape* shape, float angle, Vec2 position) {
-    bool is_circle = shape->type == CIRCLE_SHAPE;
+    bool is_circle = shape->type == SHAPE_CIRCLE || shape->type == SHAPE_CIRCLE_CONTAINER;
     if (is_circle)
         return;
     PolygonShape* polygon_shape = &shape->as.polygon;
@@ -156,10 +162,6 @@ int shape_polygon_find_incident_edge_index(PolygonShape* reference, Vec2 normal)
 
 int shape_polygon_clip_segment_to_line(Vec2* contacts_in, Vec2* contacts_out, Vec2 c0, Vec2 c1) {
     int num_out = 0;
-
-    /*Vec2 normal = vec2_normal(vec2_sub(c1, c0));*/
-    /*float dist0 = vec2_dot(vec2_sub(contacts_in[0], c0), normal);*/
-    /*float dist1 = vec2_dot(vec2_sub(contacts_in[1], c0), normal);*/
 
     Vec2 normal = vec2_normalize(vec2_sub(c1, c0));
     float dist0 = vec2_cross(vec2_sub(contacts_in[0], c0), normal);

@@ -15,7 +15,7 @@ void world_init(World* world, float gravity) {
 void world_free(World* world) {
     for (uint32_t i = 0; i < world->bodies.count; i++) {
         Body* body = &world->bodies.items[i];
-        bool is_polygon = body->shape.type == POLYGON_SHAPE || body->shape.type == BOX_SHAPE;
+        bool is_polygon = body->shape.type == SHAPE_POLYGON || body->shape.type == SHAPE_BOX;
         if (is_polygon) {
             DA_FREE(&body->shape.as.polygon.local_vertices);
             DA_FREE(&body->shape.as.polygon.world_vertices);

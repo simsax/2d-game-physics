@@ -85,6 +85,24 @@ void body_init_circle_pixels(Body* body, int radius, int x, int y, float mass) {
     body->friction = 0.7f;
 }
 
+void body_init_circle_container_pixels(Body* body, int radius, int x, int y, float mass) {
+    shape_init_circle_container(&body->shape, pixels_to_meters(radius));
+    float I = shape_moment_of_inertia(&body->shape) * mass;
+    body->position = VEC2(pixels_to_meters(x), pixels_to_meters(y));
+    body->prev_position = body->position;
+    body->velocity = VEC2(0, 0);
+    body->acceleration = VEC2(0, 0);
+    body->rotation = 0;
+    body->angular_velocity = 0;
+    body->angular_acceleration = 0;
+    body->sum_forces = VEC2(0, 0);
+    body->sum_torque = 0;
+    body->inv_mass = mass != 0.0f ? 1.0f / mass : 0.0f;
+    body->inv_I = I != 0.0f ? 1.0f / I : 0.0f ;
+    body->restitution = 1.0f;
+    body->friction = 0.7f;
+}
+
 void body_init_polygon_pixels(Body* body, Vec2Array vertices, int x, int y, float mass) {
     for (uint32_t i = 0; i < vertices.count; i++) {
         Vec2 v = vertices.items[i];

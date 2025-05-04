@@ -37,7 +37,7 @@ static Vector2 text_num_size;
 static int gui_width = 200;
 static int font_size = 40;
 static int num_demos = 9;
-static int current_demo = 2;
+static int current_demo = 3;
 
 /*static Vec2Array make_regular_polygon(int num_vertices, int radius) {*/
 /*    Vec2Array vertices = DA_NULL;*/
@@ -161,7 +161,7 @@ static void demo_rotating_motor(void) {
     float y_center = WINDOW_HEIGHT / 2.0;
     float radius = y_center - 50;
     Body* circle = world_new_body(&world);
-    body_init_circle_pixels(circle, radius, x_center, y_center, 0);
+    body_init_circle_container_pixels(circle, radius, x_center, y_center, 0);
 }
 
 static void (*demos[9])(void) = {
@@ -311,15 +311,20 @@ static void render(float alpha) {
                 body_alpha = 1;
             }
             Vec2 render_position = vec2_add(vec2_mult(body->prev_position, (1 - body_alpha)), vec2_mult(body->position, body_alpha));
-            if (body->shape.type == CIRCLE_SHAPE) {
+            if (body->shape.type == SHAPE_CIRCLE) {
                 draw_circle_line_meters(render_position.x, render_position.y,
                         body->shape.as.circle.radius, body->rotation, COLOR_CIRCLE);
             }  
-            if (body->shape.type == BOX_SHAPE) {
+            if (body->shape.type == SHAPE_CIRCLE_CONTAINER) {
+                // replace with my own smooth circle function
+                draw_circle_meters(render_position.x, render_position.y,
+                        body->shape.as.circle.radius, COLOR_CIRCLE);
+            }  
+            if (body->shape.type == SHAPE_BOX) {
                 BoxShape* box_shape = &body->shape.as.box;
                 draw_polygon_meters(render_position.x, render_position.y, box_shape->polygon.world_vertices, box_shape->polygon.prev_world_vertices, body_alpha, COLOR_BOX);
             }
-            if (body->shape.type == POLYGON_SHAPE) {
+            if (body->shape.type == SHAPE_POLYGON) {
                 PolygonShape* polygon_shape = &body->shape.as.polygon;
                 draw_polygon_meters(render_position.x, render_position.y, polygon_shape->world_vertices, polygon_shape->prev_world_vertices, body_alpha, COLOR_BOX);
             }

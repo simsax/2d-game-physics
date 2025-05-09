@@ -36,6 +36,10 @@ But I guess I'll leave them for a future project...
 
 ## Random showcase
 
+https://github.com/user-attachments/assets/1f2ac5fa-2372-45be-917b-8af61f03bf8e
+
+https://github.com/user-attachments/assets/97f48a3b-05b9-42b9-af78-7be771224e86
+
 ## References
 
 * [Pikuma's game physics course](https://pikuma.com/courses/game-physics-engine-programming)
